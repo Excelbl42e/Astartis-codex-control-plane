@@ -1,0 +1,41 @@
+﻿# Build artifacts
+build/
+build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.dir/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.lib
+*.dll
+*.exp
+
+# Judge-ready Windows bridge. Keep this small prebuilt executable so the
+# dashboard and local MCP tests can run without recompiling the C++ engine.
+!build-vs18-pathfix/
+!build-vs18-pathfix/Release/
+!build-vs18-pathfix/Release/astartis_bridge.exe
+
+# Temporary files
+*.tmp
+*.log
+*.dump
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.sdf
+
+# Test outputs
+test_*.log
+Testing/
+
+# Python
+__pycache__/
+*.pyc

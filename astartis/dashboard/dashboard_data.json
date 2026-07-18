@@ -1,0 +1,1421 @@
+{
+  "activity_history": [
+    {
+      "count": 2,
+      "time": "0m"
+    },
+    {
+      "count": 3,
+      "time": "5m"
+    },
+    {
+      "count": 4,
+      "time": "10m"
+    },
+    {
+      "count": 5,
+      "time": "15m"
+    },
+    {
+      "count": 2,
+      "time": "20m"
+    },
+    {
+      "count": 3,
+      "time": "25m"
+    },
+    {
+      "count": 4,
+      "time": "30m"
+    },
+    {
+      "count": 5,
+      "time": "35m"
+    },
+    {
+      "count": 2,
+      "time": "40m"
+    },
+    {
+      "count": 3,
+      "time": "45m"
+    },
+    {
+      "count": 4,
+      "time": "50m"
+    },
+    {
+      "count": 5,
+      "time": "55m"
+    }
+  ],
+  "agents": [
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "alert_triage",
+      "status": "online",
+      "tasks_completed": 32,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "log_parser",
+      "status": "online",
+      "tasks_completed": 20,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "status_checker",
+      "status": "online",
+      "tasks_completed": 79,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "ping_monitor",
+      "status": "online",
+      "tasks_completed": 23,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "port_scanner_fast",
+      "status": "offline",
+      "tasks_completed": 59,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "dns_checker",
+      "status": "busy",
+      "tasks_completed": 95,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "arp_monitor",
+      "status": "offline",
+      "tasks_completed": 3,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.0-h-micro",
+      "name": "heartbeat_agent",
+      "status": "busy",
+      "tasks_completed": 58,
+      "tier": "FAST"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "siem_analyst",
+      "status": "online",
+      "tasks_completed": 9,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "threat_hunter",
+      "status": "online",
+      "tasks_completed": 64,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "compliance_monitor",
+      "status": "offline",
+      "tasks_completed": 96,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "vulnerability_mgr",
+      "status": "offline",
+      "tasks_completed": 28,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "ioc_manager",
+      "status": "online",
+      "tasks_completed": 28,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "security_reporter",
+      "status": "online",
+      "tasks_completed": 94,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "threat_intel",
+      "status": "offline",
+      "tasks_completed": 46,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "forensics_investigator",
+      "status": "busy",
+      "tasks_completed": 77,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "incident_responder_soc",
+      "status": "busy",
+      "tasks_completed": 39,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "patch_manager",
+      "status": "online",
+      "tasks_completed": 10,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "identity_auditor",
+      "status": "busy",
+      "tasks_completed": 5,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "network_monitor",
+      "status": "offline",
+      "tasks_completed": 20,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "access_reviewer",
+      "status": "online",
+      "tasks_completed": 22,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "config_auditor",
+      "status": "online",
+      "tasks_completed": 20,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "anomaly_detector",
+      "status": "online",
+      "tasks_completed": 62,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "phishing_analyst",
+      "status": "online",
+      "tasks_completed": 13,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "malware_analyst",
+      "status": "online",
+      "tasks_completed": 27,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "api_tester",
+      "status": "busy",
+      "tasks_completed": 47,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "blue_team_def",
+      "status": "online",
+      "tasks_completed": 44,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "cloud_sec_tester",
+      "status": "online",
+      "tasks_completed": 70,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "container_sec",
+      "status": "offline",
+      "tasks_completed": 84,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "crypto_analyst",
+      "status": "offline",
+      "tasks_completed": 14,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "forensics_agent",
+      "status": "online",
+      "tasks_completed": 50,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "ics_scada_tester",
+      "status": "online",
+      "tasks_completed": 51,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "mobile_app_tester",
+      "status": "online",
+      "tasks_completed": 66,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "osint_gatherer",
+      "status": "offline",
+      "tasks_completed": 55,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "physical_security",
+      "status": "online",
+      "tasks_completed": 34,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "recon_agent",
+      "status": "offline",
+      "tasks_completed": 16,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "social_engineer",
+      "status": "online",
+      "tasks_completed": 95,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "vuln_scanner",
+      "status": "online",
+      "tasks_completed": 24,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "web_app_tester",
+      "status": "online",
+      "tasks_completed": 26,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "wireless_tester",
+      "status": "busy",
+      "tasks_completed": 80,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "code_reviewer",
+      "status": "online",
+      "tasks_completed": 79,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "security_reviewer",
+      "status": "busy",
+      "tasks_completed": 96,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "report_generator",
+      "status": "online",
+      "tasks_completed": 88,
+      "tier": "HEAVY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "zero_trust_engineer",
+      "status": "offline",
+      "tasks_completed": 67,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "ransomware_hunter",
+      "status": "offline",
+      "tasks_completed": 60,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "quantum_crypto_analyst",
+      "status": "online",
+      "tasks_completed": 25,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "api_security_guru",
+      "status": "online",
+      "tasks_completed": 28,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "cloud_native_defender",
+      "status": "online",
+      "tasks_completed": 59,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "threat_modeler_acc",
+      "status": "online",
+      "tasks_completed": 0,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "exploit_dev",
+      "status": "offline",
+      "tasks_completed": 70,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "risk_quantifier",
+      "status": "offline",
+      "tasks_completed": 61,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "supply_chain_auditor",
+      "status": "busy",
+      "tasks_completed": 23,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "deception_specialist",
+      "status": "offline",
+      "tasks_completed": 13,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "attribution_analyst",
+      "status": "online",
+      "tasks_completed": 12,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "malware_reverser",
+      "status": "busy",
+      "tasks_completed": 61,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "firmware_auditor",
+      "status": "offline",
+      "tasks_completed": 59,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "ai_red_teamer",
+      "status": "online",
+      "tasks_completed": 45,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "ot_security_analyst",
+      "status": "online",
+      "tasks_completed": 38,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "identity_architect",
+      "status": "busy",
+      "tasks_completed": 57,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "incident_responder",
+      "status": "online",
+      "tasks_completed": 68,
+      "tier": "ORCHESTRATOR"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "breach_simulator",
+      "status": "busy",
+      "tasks_completed": 1,
+      "tier": "ORCHESTRATOR"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "red_team_coord",
+      "status": "online",
+      "tasks_completed": 49,
+      "tier": "ORCHESTRATOR"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "purple_team",
+      "status": "busy",
+      "tasks_completed": 40,
+      "tier": "ORCHESTRATOR"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "chief_orchestrator",
+      "status": "offline",
+      "tasks_completed": 95,
+      "tier": "ORCHESTRATOR"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "threat_modeler",
+      "status": "online",
+      "tasks_completed": 13,
+      "tier": "ORCHESTRATOR"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "cpp_security_reviewer",
+      "status": "online",
+      "tasks_completed": 20,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "code_security_auditor",
+      "status": "offline",
+      "tasks_completed": 73,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "ai_model_security_evaluator",
+      "status": "online",
+      "tasks_completed": 76,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "autonomous_response_operator",
+      "status": "online",
+      "tasks_completed": 39,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "security_e2e_tester",
+      "status": "busy",
+      "tasks_completed": 56,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "build_security_analyzer",
+      "status": "online",
+      "tasks_completed": 87,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "runtime_threat_monitor",
+      "status": "online",
+      "tasks_completed": 75,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "memory_forensics_agent",
+      "status": "online",
+      "tasks_completed": 41,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "kernel_security_auditor",
+      "status": "online",
+      "tasks_completed": 62,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "supply_chain_scanner",
+      "status": "offline",
+      "tasks_completed": 70,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "zero_day_researcher",
+      "status": "online",
+      "tasks_completed": 51,
+      "tier": "ACCURACY"
+    },
+    {
+      "last_active": "2026-07-13T21:23:15Z",
+      "model": "granite4.1-8b",
+      "name": "exploit_chain_analyst",
+      "status": "online",
+      "tasks_completed": 86,
+      "tier": "ACCURACY"
+    }
+  ],
+  "alerts": [
+    {
+      "agent_name": "status_checker",
+      "message": "Brute-force SSH from 185.220.101.1 (Tor exit node)",
+      "severity": "CRITICAL",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "threat_intel",
+      "message": "Port scan detected — 10.0.0.55 scanned 1024 ports",
+      "severity": "LOW",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "access_reviewer",
+      "message": "Malware signature match: Ransomware.WannaCry variant",
+      "severity": "CRITICAL",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "config_auditor",
+      "message": "Anomalous outbound DNS query to C2 domain",
+      "severity": "LOW",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "incident_responder_soc",
+      "message": "Failed login attempt — admin account (5× in 60s)",
+      "severity": "LOW",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "mobile_app_tester",
+      "message": "Lateral movement: SMB relay from 10.0.1.12",
+      "severity": "CRITICAL",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "incident_responder",
+      "message": "File encryption behaviour detected — monitoring",
+      "severity": "CRITICAL",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "agent_name": "recon_agent",
+      "message": "Decoy credential accessed — honeypot triggered",
+      "severity": "HIGH",
+      "timestamp": "2026-07-13T21:23:15Z"
+    }
+  ],
+  "audit_chain_valid": true,
+  "audit_entries": [
+    {
+      "chain_valid": true,
+      "entry_id": "AE-1",
+      "event_type": "firewall_block",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "chain_valid": true,
+      "entry_id": "AE-2",
+      "event_type": "agent_task_completed",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "chain_valid": true,
+      "entry_id": "AE-3",
+      "event_type": "worm_lock_engaged",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "chain_valid": true,
+      "entry_id": "AE-4",
+      "event_type": "decoy_event",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "chain_valid": true,
+      "entry_id": "AE-5",
+      "event_type": "quarantine",
+      "timestamp": "2026-07-13T21:23:15Z"
+    },
+    {
+      "chain_valid": true,
+      "entry_id": "AE-6",
+      "event_type": "rule_fired",
+      "timestamp": "2026-07-13T21:23:15Z"
+    }
+  ],
+  "chaos_windows": [
+    {
+      "K": 0.27,
+      "anomalous": false,
+      "window_index": 0
+    },
+    {
+      "K": 0.14,
+      "anomalous": false,
+      "window_index": 1
+    },
+    {
+      "K": 0.26,
+      "anomalous": false,
+      "window_index": 2
+    },
+    {
+      "K": 0.31,
+      "anomalous": false,
+      "window_index": 3
+    },
+    {
+      "K": 0.48,
+      "anomalous": false,
+      "window_index": 4
+    },
+    {
+      "K": 0.11,
+      "anomalous": false,
+      "window_index": 5
+    },
+    {
+      "K": 0.26,
+      "anomalous": false,
+      "window_index": 6
+    },
+    {
+      "K": 0.1,
+      "anomalous": false,
+      "window_index": 7
+    },
+    {
+      "K": 0.06,
+      "anomalous": false,
+      "window_index": 8
+    },
+    {
+      "K": 0.0,
+      "anomalous": false,
+      "window_index": 9
+    },
+    {
+      "K": 0.04,
+      "anomalous": false,
+      "window_index": 10
+    },
+    {
+      "K": 0.64,
+      "anomalous": false,
+      "window_index": 11
+    },
+    {
+      "K": 0.28,
+      "anomalous": false,
+      "window_index": 12
+    },
+    {
+      "K": 0.21,
+      "anomalous": false,
+      "window_index": 13
+    },
+    {
+      "K": 0.28,
+      "anomalous": false,
+      "window_index": 14
+    },
+    {
+      "K": 0.52,
+      "anomalous": false,
+      "window_index": 15
+    },
+    {
+      "K": 0.36,
+      "anomalous": false,
+      "window_index": 16
+    },
+    {
+      "K": 0.32,
+      "anomalous": false,
+      "window_index": 17
+    },
+    {
+      "K": 0.08,
+      "anomalous": false,
+      "window_index": 18
+    },
+    {
+      "K": 0.22,
+      "anomalous": false,
+      "window_index": 19
+    },
+    {
+      "K": 0.23,
+      "anomalous": false,
+      "window_index": 20
+    },
+    {
+      "K": 0.06,
+      "anomalous": false,
+      "window_index": 21
+    },
+    {
+      "K": 0.06,
+      "anomalous": false,
+      "window_index": 22
+    },
+    {
+      "K": 0.61,
+      "anomalous": false,
+      "window_index": 23
+    },
+    {
+      "K": 0.1,
+      "anomalous": false,
+      "window_index": 24
+    },
+    {
+      "K": 0.2,
+      "anomalous": false,
+      "window_index": 25
+    },
+    {
+      "K": 0.2,
+      "anomalous": false,
+      "window_index": 26
+    },
+    {
+      "K": 0.14,
+      "anomalous": false,
+      "window_index": 27
+    },
+    {
+      "K": 0.64,
+      "anomalous": false,
+      "window_index": 28
+    },
+    {
+      "K": 0.25,
+      "anomalous": false,
+      "window_index": 29
+    }
+  ],
+  "cpu_history": [
+    49.0,
+    46.0,
+    31.0,
+    41.0,
+    31.0,
+    23.0,
+    39.0,
+    59.0,
+    23.0,
+    45.0,
+    40.0,
+    23.0,
+    19.0,
+    24.0,
+    67.0,
+    24.0,
+    54.0,
+    29.0,
+    31.0,
+    16.0
+  ],
+  "decoy_events": [
+    {
+      "action": "read",
+      "attacker_tag": "attacker_001",
+      "poison_type": "DATA_VALUATION",
+      "timestamp_ms": 1783970595205
+    },
+    {
+      "action": "write_attempt",
+      "attacker_tag": "attacker_001",
+      "poison_type": "CREDENTIAL",
+      "timestamp_ms": 1783970535205
+    },
+    {
+      "action": "read",
+      "attacker_tag": "attacker_001",
+      "poison_type": "LATERAL_MOVEMENT",
+      "timestamp_ms": 1783970475205
+    },
+    {
+      "action": "write_attempt",
+      "attacker_tag": "attacker_001",
+      "poison_type": "DATA_VALUATION",
+      "timestamp_ms": 1783970415205
+    },
+    {
+      "action": "read",
+      "attacker_tag": "attacker_001",
+      "poison_type": "CREDENTIAL",
+      "timestamp_ms": 1783970355205
+    }
+  ],
+  "disk_history": [
+    68.0,
+    41.0,
+    55.0,
+    55.0,
+    57.0,
+    53.0,
+    69.0,
+    48.0,
+    55.0,
+    44.0,
+    62.0,
+    68.0,
+    55.0,
+    47.0,
+    43.0,
+    57.0,
+    49.0,
+    52.0,
+    48.0,
+    56.0
+  ],
+  "entropy_windows": [
+    {
+      "anomalous": false,
+      "max_entropy_bits": 6.9,
+      "mean_entropy_bits": 5.2,
+      "window_index": 0
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 5.300000000000001,
+      "mean_entropy_bits": 3.2,
+      "window_index": 1
+    },
+    {
+      "anomalous": true,
+      "max_entropy_bits": 9.5,
+      "mean_entropy_bits": 7.5,
+      "window_index": 2
+    },
+    {
+      "anomalous": true,
+      "max_entropy_bits": 9.299999999999999,
+      "mean_entropy_bits": 7.7,
+      "window_index": 3
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 7.5,
+      "mean_entropy_bits": 6.4,
+      "window_index": 4
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 7.9,
+      "mean_entropy_bits": 5.5,
+      "window_index": 5
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 7.699999999999999,
+      "mean_entropy_bits": 6.6,
+      "window_index": 6
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 8.1,
+      "mean_entropy_bits": 7.1,
+      "window_index": 7
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 5.9,
+      "mean_entropy_bits": 3.5,
+      "window_index": 8
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 4.800000000000001,
+      "mean_entropy_bits": 3.4,
+      "window_index": 9
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 4.7,
+      "mean_entropy_bits": 3.2,
+      "window_index": 10
+    },
+    {
+      "anomalous": true,
+      "max_entropy_bits": 9.5,
+      "mean_entropy_bits": 7.6,
+      "window_index": 11
+    },
+    {
+      "anomalous": true,
+      "max_entropy_bits": 9.899999999999999,
+      "mean_entropy_bits": 7.7,
+      "window_index": 12
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 4.6000000000000005,
+      "mean_entropy_bits": 3.4,
+      "window_index": 13
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 8.7,
+      "mean_entropy_bits": 6.8,
+      "window_index": 14
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 7.7,
+      "mean_entropy_bits": 5.7,
+      "window_index": 15
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 5.6,
+      "mean_entropy_bits": 4.0,
+      "window_index": 16
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 6.8,
+      "mean_entropy_bits": 5.8,
+      "window_index": 17
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 7.6,
+      "mean_entropy_bits": 4.7,
+      "window_index": 18
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 4.9,
+      "mean_entropy_bits": 3.0,
+      "window_index": 19
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 5.8,
+      "mean_entropy_bits": 3.3,
+      "window_index": 20
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 9.2,
+      "mean_entropy_bits": 6.8,
+      "window_index": 21
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 4.5,
+      "mean_entropy_bits": 3.1,
+      "window_index": 22
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 8.200000000000001,
+      "mean_entropy_bits": 5.9,
+      "window_index": 23
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 5.0,
+      "mean_entropy_bits": 3.4,
+      "window_index": 24
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 8.4,
+      "mean_entropy_bits": 6.6,
+      "window_index": 25
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 8.1,
+      "mean_entropy_bits": 5.8,
+      "window_index": 26
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 6.9,
+      "mean_entropy_bits": 4.4,
+      "window_index": 27
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 7.4,
+      "mean_entropy_bits": 5.9,
+      "window_index": 28
+    },
+    {
+      "anomalous": false,
+      "max_entropy_bits": 6.699999999999999,
+      "mean_entropy_bits": 4.3,
+      "window_index": 29
+    }
+  ],
+  "firewall_blocks": [
+    {
+      "blocked_at_ms": 1783970295205,
+      "expires_at_ms": 1783971195205,
+      "ip": "192.168.1.100",
+      "rule_name_in": "Astartis-Block-192.168.1.100-in"
+    },
+    {
+      "blocked_at_ms": 1783970295205,
+      "expires_at_ms": 1783971195205,
+      "ip": "192.168.1.101",
+      "rule_name_in": "Astartis-Block-192.168.1.101-in"
+    },
+    {
+      "blocked_at_ms": 1783970295205,
+      "expires_at_ms": 1783971195205,
+      "ip": "192.168.1.102",
+      "rule_name_in": "Astartis-Block-192.168.1.102-in"
+    }
+  ],
+  "health": {
+    "clamd_online": false,
+    "is_admin": false,
+    "npcap_installed": true,
+    "npcap_service_running": true,
+    "ollama_online": true
+  },
+  "kpi": {
+    "active_agents": 58,
+    "alerts_24h": 6,
+    "critical_alerts": 0,
+    "queue_depth": 4,
+    "threat_level": "LOW",
+    "threat_score": 32
+  },
+  "mem_history": [
+    43.0,
+    49.0,
+    27.0,
+    35.0,
+    25.0,
+    55.0,
+    59.0,
+    27.0,
+    35.0,
+    25.0,
+    25.0,
+    63.0,
+    28.0,
+    27.0,
+    60.0,
+    51.0,
+    70.0,
+    71.0,
+    50.0,
+    28.0
+  ],
+  "net_history": [
+    95.0,
+    8.0,
+    18.0,
+    46.0,
+    52.0,
+    80.0,
+    25.0,
+    21.0,
+    91.0,
+    2.0,
+    17.0,
+    77.0,
+    30.0,
+    68.0,
+    8.0,
+    36.0,
+    33.0,
+    5.0,
+    26.0,
+    25.0
+  ],
+  "new_logs": [
+    {
+      "level": "INFO",
+      "message": "Agent health check passed — 77/77 responsive",
+      "timestamp": "2026-07-13T21:23:15Z"
+    }
+  ],
+  "pipeline_stages": [
+    {
+      "detail": "OK",
+      "stage": "CODE_COMMIT",
+      "status": "PASSED"
+    },
+    {
+      "detail": "OK",
+      "stage": "STATIC_ANALYSIS",
+      "status": "PASSED"
+    },
+    {
+      "detail": "OK",
+      "stage": "UNIT_TESTS",
+      "status": "PASSED"
+    },
+    {
+      "detail": "OK",
+      "stage": "INTEGRATION_TESTS",
+      "status": "PASSED"
+    },
+    {
+      "detail": "OK",
+      "stage": "SECURITY_SCAN",
+      "status": "PASSED"
+    },
+    {
+      "detail": "Agent fixed lint",
+      "stage": "BUILD",
+      "status": "AUTO_FIXED"
+    },
+    {
+      "detail": "OK",
+      "stage": "DEPLOY_STAGING",
+      "status": "PASSED"
+    },
+    {
+      "detail": "OK",
+      "stage": "E2E_TESTS",
+      "status": "PASSED"
+    },
+    {
+      "detail": "OK",
+      "stage": "DEPLOY_PRODUCTION",
+      "status": "PASSED"
+    },
+    {
+      "detail": "Build timeout",
+      "stage": "MONITOR",
+      "status": "FAILED"
+    }
+  ],
+  "quarantine_entries": [
+    {
+      "entry_id": "Q-1",
+      "quarantined_at_ms": 1783966995205,
+      "virus_name": "Trojan.FakeAV-1"
+    },
+    {
+      "entry_id": "Q-2",
+      "quarantined_at_ms": 1783966995205,
+      "virus_name": "Trojan.FakeAV-2"
+    }
+  ],
+  "sandbox_entries": [
+    {
+      "locked": true,
+      "rel_path": "etc/config-0.conf",
+      "type": "FILE",
+      "version": 2
+    },
+    {
+      "locked": true,
+      "rel_path": "var/log/app-1.log",
+      "type": "DIRECTORY",
+      "version": 2
+    },
+    {
+      "locked": false,
+      "rel_path": "etc/config-2.conf",
+      "type": "FILE",
+      "version": 1
+    },
+    {
+      "locked": false,
+      "rel_path": "var/log/app-3.log",
+      "type": "DIRECTORY",
+      "version": 4
+    },
+    {
+      "locked": false,
+      "rel_path": "etc/config-4.conf",
+      "type": "FILE",
+      "version": 5
+    },
+    {
+      "locked": false,
+      "rel_path": "var/log/app-5.log",
+      "type": "DIRECTORY",
+      "version": 4
+    },
+    {
+      "locked": false,
+      "rel_path": "etc/config-6.conf",
+      "type": "FILE",
+      "version": 4
+    },
+    {
+      "locked": true,
+      "rel_path": "var/log/app-7.log",
+      "type": "DIRECTORY",
+      "version": 4
+    }
+  ],
+  "system": {
+    "mode": "FULL",
+    "status": "online",
+    "timestamp": "2026-07-13T19:23:17.333Z",
+    "version": "3.0.0"
+  },
+  "system_metrics": {
+    "cpu_cores": 8,
+    "cpu_percent": 100.0,
+    "disk_free_gb": 730.9989051818848,
+    "disk_percent": 23.2651086799319,
+    "memory_percent": 48.710354047851325,
+    "memory_total_gb": 31.83721160888672,
+    "memory_used_gb": 15.508018493652344,
+    "network_mbps": 0.0,
+    "ollama_online": true
+  },
+  "tier_distribution": {
+    "ACCURACY": 16,
+    "FAST": 8,
+    "HEAVY": 35,
+    "ORCHESTRATOR": 6
+  },
+  "worm": {
+    "is_locked": false
+  },
+  "zerotrust_decisions": [
+    {
+      "decision": "ALLOW",
+      "resource": "/api/sensitive-1",
+      "trust_score": 91,
+      "user_id": "user_1"
+    },
+    {
+      "decision": "DENY",
+      "resource": "/api/sensitive-2",
+      "trust_score": 29,
+      "user_id": "user_2"
+    },
+    {
+      "decision": "QUARANTINE",
+      "resource": "/api/sensitive-3",
+      "trust_score": 65,
+      "user_id": "user_3"
+    },
+    {
+      "decision": "MFA_REQUIRED",
+      "resource": "/api/sensitive-4",
+      "trust_score": 54,
+      "user_id": "user_4"
+    }
+  ]
+}

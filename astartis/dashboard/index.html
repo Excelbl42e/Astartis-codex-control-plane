@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astartis v3.0 — 77-Agent Cybersecurity System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridjs@6.2.0/dist/gridjs.umd.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/gridjs@6.2.0/dist/theme/mermaid.min.css" rel="stylesheet" />
+</head>
+<body>
+
+<!-- Startup overlay — hidden once backend connects -->
+<div id="startup-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#ffffff;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;">
+  <div style="font-size:48px;font-weight:700;color:#0f62fe;margin-bottom:16px;">A</div>
+  <h1 style="font-size:24px;font-weight:600;margin-bottom:8px;">Astartis v3.0 Dashboard</h1>
+  <p style="color:#525252;margin-bottom:24px;max-width:400px;">
+    Waiting for backend connection...
+  </p>
+  <div style="background:#f4f4f4;border-radius:4px;padding:16px 24px;text-align:left;font-size:13px;color:#161616;max-width:500px;">
+    <p style="margin:0 0 8px;font-weight:600;">If this persists, start the server:</p>
+    <ol style="margin:0;padding-left:20px;line-height:1.8;">
+      <li>Double-click <code>start-dashboard.bat</code> in this folder, OR</li>
+      <li>Run PowerShell as Admin:<br><code>cd "...\astartis\dashboard"</code><br><code>.\demo_dashboard_data.exe</code></li>
+      <li>Open <a href="http://127.0.0.1:9876/" style="color:#0f62fe;">http://127.0.0.1:9876/</a></li>
+    </ol>
+  </div>
+  <p style="color:#8d8d8d;font-size:12px;margin-top:24px;">Do NOT open this file directly (file://). Use the URL above.</p>
+</div>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">A</div>
+  <ul class="sidebar-nav">
+    <li class="nav-item active" data-tab="dashboard">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/>
+        <rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/>
+      </svg>
+      <span class="nav-tooltip">Dashboard</span>
+    </li>
+    <li class="nav-item" data-tab="protection">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <span class="nav-tooltip">Protection</span>
+    </li>
+    <li class="nav-item" data-tab="network">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.67 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.67 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.67a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="nav-tooltip">Network</span>
+    </li>
+    <li class="nav-item" data-tab="agents">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+      <span class="nav-tooltip">Agents</span>
+    </li>
+    <li class="nav-item" data-tab="pipeline">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+      <span class="nav-tooltip">Pipeline</span>
+    </li>
+    <li class="nav-item" data-tab="sandbox">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span class="nav-tooltip">Sandbox</span>
+    </li>
+    <li class="nav-item" data-tab="terminal">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4 17 10 11 4 5"/>
+        <line x1="12" y1="19" x2="20" y2="19"/>
+      </svg>
+      <span class="nav-tooltip">Terminal</span>
+    </li>
+    <li class="nav-item" data-tab="logs">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <span class="nav-tooltip">Logs</span>
+    </li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="status-dot online" title="System Online"></div>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <h1 class="page-title">Astartis v3.0</h1>
+    <div class="topbar-right">
+      <span class="mode-badge" id="mode-badge">FULL MODE</span>
+      <span class="last-update" id="last-update">Updated: --:--:--</span>
+    </div>
+  </header>
+
+  <!-- DASHBOARD TAB -->
+  <section id="tab-dashboard" class="tab-content active">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Active Agents</div>
+        <div class="kpi-value" id="kpi-active">--</div>
+        <div class="kpi-sub">of 77 total</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Threat Level</div>
+        <div class="kpi-value" id="kpi-threat">--</div>
+        <div class="kpi-sub" id="kpi-threat-sub">--</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Queue Depth</div>
+        <div class="kpi-value" id="kpi-queue">--</div>
+        <div class="kpi-sub">pending tasks</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Alerts (24h)</div>
+        <div class="kpi-value" id="kpi-alerts">--</div>
+        <div class="kpi-sub" id="kpi-alerts-sub">-- critical</div>
+      </div>
+    </div>
+    <div class="status-banner" id="status-banner">
+      <div class="status-item">
+        <span class="status-item-label">WORM:</span>
+        <span class="status-pill normal" id="worm-status">NORMAL</span>
+      </div>
+      <div class="status-item">
+        <span class="status-item-label">Mode:</span>
+        <span class="status-pill full" id="mode-status">FULL</span>
+      </div>
+      <div class="status-item">
+        <span class="status-item-label">Ollama:</span>
+        <span class="status-pill online" id="ollama-status">Online</span>
+      </div>
+      <div class="status-item">
+        <span class="status-item-label">Audit:</span>
+        <span class="status-pill online" id="audit-status">Valid</span>
+      </div>
+      <div class="status-item threat-gauge-container">
+        <span class="status-item-label">Threat:</span>
+        <div class="threat-gauge-bg">
+          <div class="threat-gauge-fill low" id="threat-gauge-fill" style="width:23%"></div>
+        </div>
+        <span class="threat-gauge-value" id="threat-gauge-value">23</span>
+      </div>
+    </div>
+    <!-- System Health Bar -->
+    <div class="health-bar" id="health-bar">
+      <div class="health-item" id="health-ollama">
+        <div class="health-dot"></div>
+        <span class="health-label">Ollama</span>
+      </div>
+      <div class="health-item" id="health-npcap">
+        <div class="health-dot"></div>
+        <span class="health-label">Npcap</span>
+      </div>
+      <div class="health-item" id="health-clamd">
+        <div class="health-dot"></div>
+        <span class="health-label">ClamAV</span>
+      </div>
+      <div class="health-item" id="health-admin">
+        <div class="health-dot"></div>
+        <span class="health-label">Admin</span>
+      </div>
+    </div>
+    <div class="live-metrics-row">
+      <div class="live-metric-card">
+        <div class="live-metric-label">CPU Usage</div>
+        <div class="live-metric-value" id="metric-cpu">--%</div>
+        <div class="live-metric-sub" id="metric-cpu-sub">-- cores</div>
+        <div class="sparkline-container"><canvas id="spark-cpu"></canvas></div>
+      </div>
+      <div class="live-metric-card">
+        <div class="live-metric-label">Memory</div>
+        <div class="live-metric-value" id="metric-mem">--%</div>
+        <div class="live-metric-sub" id="metric-mem-sub">-- GB used</div>
+        <div class="sparkline-container"><canvas id="spark-mem"></canvas></div>
+      </div>
+      <div class="live-metric-card">
+        <div class="live-metric-label">Disk</div>
+        <div class="live-metric-value" id="metric-disk">--%</div>
+        <div class="live-metric-sub" id="metric-disk-sub">-- GB free</div>
+        <div class="sparkline-container"><canvas id="spark-disk"></canvas></div>
+      </div>
+      <div class="live-metric-card">
+        <div class="live-metric-label">Network</div>
+        <div class="live-metric-value" id="metric-net">--</div>
+        <div class="live-metric-sub" id="metric-net-sub">-- Mbps</div>
+        <div class="sparkline-container"><canvas id="spark-net"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Agent Activity (Last Hour)</h3></div>
+        <div class="chart-container"><canvas id="chart-activity"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Agent Distribution by Tier</h3></div>
+        <div class="chart-container"><canvas id="chart-tiers"></canvas></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header">
+        <h3>Recent Alerts</h3>
+        <span class="badge" id="alert-count">0</span>
+      </div>
+      <div id="alerts-table"></div>
+    </div>
+  </section>
+
+  <!-- PROTECTION TAB -->
+  <section id="tab-protection" class="tab-content">
+    <div class="tab-title">Protection Center</div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Firewall Blocks</h3></div>
+        <div class="data-table-container" id="firewall-table"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Quarantine</h3></div>
+        <div class="data-table-container" id="quarantine-table"></div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Decoy Events</h3></div>
+        <div class="data-table-container" id="decoy-table"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Zero Trust Decisions</h3></div>
+        <div class="data-table-container" id="zerotrust-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NETWORK TAB -->
+  <section id="tab-network" class="tab-content">
+    <div class="tab-title">Network Monitoring</div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Packet Entropy (Live)</h3></div>
+        <div class="chart-container"><canvas id="chart-entropy"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Chaos Score (K-Value)</h3></div>
+        <div class="chart-container"><canvas id="chart-chaos"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENTS TAB -->
+  <section id="tab-agents" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <h3>All 77 Agents</h3>
+        <div class="filter-bar">
+          <input type="text" id="agent-search" placeholder="Search agents..." class="search-input">
+          <select id="tier-filter" class="filter-select">
+            <option value="all">All Tiers</option>
+            <option value="FAST">FAST (MoE 3B)</option>
+            <option value="HEAVY">HEAVY (Dense 8B)</option>
+            <option value="ACCURACY">ACCURACY</option>
+            <option value="ORCHESTRATOR">ORCHESTRATOR</option>
+          </select>
+          <select id="status-filter" class="filter-select">
+            <option value="all">All Status</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+            <option value="busy">Busy</option>
+          </select>
+        </div>
+      </div>
+      <div id="agents-table"></div>
+    </div>
+  </section>
+
+  <!-- PIPELINE TAB -->
+  <section id="tab-pipeline" class="tab-content">
+    <div class="tab-title">Self-Healing Pipeline</div>
+    <div class="section-card">
+      <div class="section-header"><h3>Pipeline Stage Status</h3></div>
+      <div class="data-table-container" id="pipeline-table"></div>
+    </div>
+  </section>
+
+  <!-- SANDBOX TAB -->
+  <section id="tab-sandbox" class="tab-content">
+    <div class="tab-title">Sandbox &amp; Audit</div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Sandbox Files</h3></div>
+        <div class="data-table-container" id="sandbox-table"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3 class="chart-title">Audit Chain</h3></div>
+        <div class="data-table-container" id="audit-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TERMINAL TAB -->
+  <section id="tab-terminal" class="tab-content">
+    <div class="terminal-container">
+      <div class="terminal-header">
+        <span class="terminal-title">astartis-shell</span>
+        <div class="terminal-controls">
+          <button class="term-btn" id="term-clear">Clear</button>
+          <button class="term-btn" id="term-pause">Pause</button>
+        </div>
+      </div>
+      <div class="terminal-body" id="terminal-body">
+        <div class="terminal-content" id="terminal-content"></div>
+      </div>
+      <div class="terminal-input-row">
+        <span class="terminal-prompt">$</span>
+        <input type="text" class="terminal-input" id="terminal-input"
+               placeholder="Enter command (help for list)" autocomplete="off">
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGS TAB -->
+  <section id="tab-logs" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <h3>System Logs</h3>
+        <div class="log-controls">
+          <select id="log-level-filter" class="filter-select">
+            <option value="all">All Levels</option>
+            <option value="INFO">INFO</option>
+            <option value="WARN">WARN</option>
+            <option value="ERROR">ERROR</option>
+            <option value="DEBUG">DEBUG</option>
+          </select>
+          <button class="btn-secondary" id="log-export">Export</button>
+          <button class="btn-secondary" id="log-clear">Clear</button>
+        </div>
+      </div>
+      <div class="log-container" id="log-container"></div>
+    </div>
+  </section>
+</main>
+
+<div class="powered-by">
+  <div class="powered-by-dot"></div>
+  <span>Powered by IBM Granite</span>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
