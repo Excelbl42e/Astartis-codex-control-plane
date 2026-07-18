@@ -269,4 +269,10 @@ I used Codex with GPT-5.6 to audit the C++/Phoenix/Node boundaries, build and te
 
 ## Submission note
 
-The Devpost submission requires a Codex `/feedback` Session ID for the task where I built the majority of the core functionality. I will generate that Session ID from this project task and paste it into Devpost; I do not fabricate or hard-code it in the repository.
+The Codex `/feedback` ID for the project task in which I built the majority of the core functionality is:
+
+```text
+019f6f0f-05a5-7451-9438-7ab75eaeb632
+```
+
+I will also provide this ID in the Devpost submission.
