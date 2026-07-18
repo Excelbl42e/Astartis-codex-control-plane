@@ -1,0 +1,17 @@
+﻿# Elixir build artifacts
+_build/
+deps/
+
+# Generated assets
+priv/static/assets/
+priv/static/cache_manifest.json
+
+# Environment
+.env
+.env.*
+*.secret.exs
+
+# Temporary
+*.dump
+*.log
+erl_crash.dump

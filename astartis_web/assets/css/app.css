@@ -1,0 +1,162 @@
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
+
+@import "tailwindcss" source(none);
+@import "phoenix-colocated/astartis_web/colocated.css";
+@source "../css";
+@source "../js";
+@source "../../lib/astartis_web_web";
+/* Required for Tailwind to automatically pick up changes in colocated CSS files in dev */
+@source "../../_build/dev/phoenix-colocated/astartis_web/*/";
+
+/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
+   The heroicons installation itself is managed by your mix.exs */
+@plugin "../vendor/heroicons";
+
+/* daisyUI Tailwind Plugin. You can update this file by fetching the latest version with:
+   curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.js
+   Make sure to look at the daisyUI changelog: https://daisyui.com/docs/changelog/ */
+@plugin "../vendor/daisyui" {
+  themes: false;
+}
+
+/* daisyUI theme plugin. You can update this file by fetching the latest version with:
+  curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.js
+  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
+  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
+@plugin "../vendor/daisyui-theme" {
+  name: "dark";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: #161616;
+  --color-base-200: #262626;
+  --color-base-300: #393939;
+  --color-base-content: #f4f4f4;
+  --color-primary: #78a9ff;
+  --color-primary-content: #001141;
+  --color-secondary: #a6c8ff;
+  --color-secondary-content: #001141;
+  --color-accent: #08bdba;
+  --color-accent-content: #001f1f;
+  --color-neutral: #393939;
+  --color-neutral-content: #f4f4f4;
+  --color-info: #78a9ff;
+  --color-info-content: #001141;
+  --color-success: #42be65;
+  --color-success-content: #071908;
+  --color-warning: #f1c21b;
+  --color-warning-content: #161616;
+  --color-error: #fa4d56;
+  --color-error-content: #2d0709;
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "../vendor/daisyui-theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: #ffffff;
+  --color-base-200: #f4f4f4;
+  --color-base-300: #e0e0e0;
+  --color-base-content: #161616;
+  --color-primary: #0f62fe;
+  --color-primary-content: #ffffff;
+  --color-secondary: #393939;
+  --color-secondary-content: #ffffff;
+  --color-accent: #005d5d;
+  --color-accent-content: #ffffff;
+  --color-neutral: #525252;
+  --color-neutral-content: #ffffff;
+  --color-info: #0043ce;
+  --color-info-content: #ffffff;
+  --color-success: #198038;
+  --color-success-content: #ffffff;
+  --color-warning: #f1c21b;
+  --color-warning-content: #161616;
+  --color-error: #da1e28;
+  --color-error-content: #ffffff;
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Add variants based on LiveView classes */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+/* Use the data attribute for dark mode  */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* Astartis uses a bright, Carbon-inspired control-room foundation. */
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  --astartis-canvas: #f4f4f4;
+  --astartis-surface: #ffffff;
+  --astartis-border: #dde1e6;
+  --astartis-text: #161616;
+  --astartis-text-muted: #525252;
+  --astartis-blue: #0f62fe;
+  --astartis-blue-hover: #0043ce;
+  --astartis-focus: #0f62fe;
+}
+
+html {
+  background: var(--astartis-canvas);
+  color-scheme: light;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--astartis-canvas);
+  color: var(--astartis-text);
+  font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: #a6c8ff;
+  color: #001141;
+}
+
+:focus-visible {
+  outline: 2px solid var(--astartis-focus);
+  outline-offset: 2px;
+}
+
+/* The live entropy canvas used to assume a dark glass card. Keep its data visible on white. */
+.chaos-canvas-container {
+  background: var(--astartis-surface) !important;
+  border: 1px solid #a6c8ff !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 98, 254, 0.04);
+}
+
+.chaos-canvas-container canvas {
+  background: var(--astartis-canvas) !important;
+}
