@@ -1,0 +1,20 @@
+# Phoenix / Node build output (the dashboard source itself is versioned)
+astartis_web/_build/
+astartis_web/deps/
+astartis_web/assets/node_modules/
+astartis_web/.elixir_ls/
+
+# Generated runtime output and local crash/debug files
+erl_crash.dump
+astartis/bridge_out.txt
+astartis/dashboard/demo_out.txt
+astartis/dbg_stderr.txt
+astartis/dbg_stdout.txt
+astartis/out_ollama.txt
+astartis/out_ollama_stdout.txt
+handoff-stage-*/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+*.polish_backup

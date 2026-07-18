@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "astartis-control-plane": {
+      "command": "node",
+      "args": ["scripts/astartis_mcp_server.mjs"],
+      "cwd": "."
+    }
+  }
+}

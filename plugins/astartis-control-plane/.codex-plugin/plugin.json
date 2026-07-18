@@ -1,0 +1,24 @@
+{
+  "name": "astartis-control-plane",
+  "version": "0.1.0",
+  "description": "A local, policy-aware security control plane for Codex developers.",
+  "author": {
+    "name": "Kgosi Blanda"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Astartis Control Plane",
+    "shortDescription": "Investigate Zero Trust events and verify secure fixes.",
+    "longDescription": "Astartis Control Plane gives Codex a safe, local interface to Astartis NAC, Zero Trust, agent health, audit evidence, and Proof Mode.",
+    "developerName": "Kgosi Blanda",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read"],
+    "defaultPrompt": [
+      "Investigate the current Astartis security posture.",
+      "Simulate a non-compliant eGov device admission.",
+      "Run Astartis Proof Mode and explain the evidence."
+    ],
+    "brandColor": "#0F766E"
+  },
+  "mcpServers": "./.mcp.json"
+}
