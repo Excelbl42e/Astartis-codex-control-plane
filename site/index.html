@@ -3,96 +3,50 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Astartis x Codex — evidence-led developer security control plane." />
+    <meta name="description" content="Astartis x Codex - evidence-led developer security control plane." />
     <title>Astartis x Codex | Developer security evidence</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
       <a class="brand" href="#top" aria-label="Astartis x Codex home">Astartis <span>x</span> Codex</a>
-      <nav aria-label="Main navigation">
-        <a href="#workflow">Workflow</a>
-        <a href="#lab">Interactive lab</a>
-        <a href="#run">Run locally</a>
-      </nav>
+      <nav aria-label="Main navigation"><a href="#workflow">Workflow</a><a href="#lab">Interactive lab</a><a href="#run">Run locally</a></nav>
       <a class="top-link" href="https://github.com/Excelbl42e/Astartis-codex-control-plane">View source</a>
     </header>
-
     <main id="top">
       <section class="hero grid">
         <div class="hero-copy">
           <p class="eyebrow">Developer security control plane</p>
           <h1>Security evidence that reaches the developer workflow.</h1>
           <p class="lead">Astartis makes deterministic posture and policy evidence inspectable. Codex turns that evidence into a safe investigation, explanation, remediation plan, and verification step.</p>
-          <div class="actions">
-            <a class="button primary" href="#lab">Open interactive lab</a>
-            <a class="button secondary" href="#run">Run on Windows</a>
-          </div>
-          <p class="fine-print">Local-first MCP integration · deterministic policy authority · simulation boundaries made explicit</p>
+          <div class="actions"><a class="button primary" href="#lab">Open interactive lab</a><a class="button secondary" href="#run">Run on Windows</a></div>
+          <p class="fine-print">Local-first MCP integration - deterministic policy authority - explicit simulation boundaries</p>
         </div>
         <aside class="hero-panel" aria-label="Astartis system status">
           <div class="panel-heading"><span>Local assurance</span><span class="status good">healthy</span></div>
-          <div class="signal-grid">
-            <div><small>Agents</small><strong>77</strong><span>catalogued</span></div>
-            <div><small>Audit chain</small><strong>valid</strong><span>tamper-evident</span></div>
-            <div><small>Safe tools</small><strong>7</strong><span>via local MCP</span></div>
-            <div><small>Proof Mode</small><strong>bounded</strong><span>local simulation</span></div>
-          </div>
+          <div class="signal-grid"><div><small>Agents</small><strong>77</strong><span>catalogued</span></div><div><small>Audit chain</small><strong>valid</strong><span>tamper-evident</span></div><div><small>Safe tools</small><strong>7</strong><span>via local MCP</span></div><div><small>Proof Mode</small><strong>bounded</strong><span>local simulation</span></div></div>
           <div class="evidence-line"><span class="pulse"></span> Evidence stays local to the machine</div>
         </aside>
       </section>
 
       <section id="workflow" class="section">
-        <p class="eyebrow">One bounded workflow</p>
-        <h2>Inspect, understand, fix, verify.</h2>
-        <div class="steps">
-          <article><span>01</span><h3>Observe</h3><p>Posture, packets, rules, audit, recovery, and fleet evidence are assembled locally.</p></article>
-          <article><span>02</span><h3>Decide</h3><p>Astartis evaluates NAC and Zero Trust policy with deterministic, reviewable controls.</p></article>
-          <article><span>03</span><h3>Explain</h3><p>Codex retrieves only permitted evidence through seven narrow local MCP tools.</p></article>
-          <article><span>04</span><h3>Verify</h3><p>Proof Mode and safe diagnostics show the outcome without touching a production environment.</p></article>
-        </div>
+        <p class="eyebrow">One bounded workflow</p><h2>Inspect, understand, fix, verify.</h2>
+        <div class="steps"><article><span>01</span><h3>Observe</h3><p>Posture, packets, rules, audit, recovery, and fleet evidence are assembled locally.</p></article><article><span>02</span><h3>Decide</h3><p>Astartis evaluates NAC and Zero Trust policy with deterministic, reviewable controls.</p></article><article><span>03</span><h3>Explain</h3><p>Codex retrieves only permitted evidence through seven narrow local MCP tools.</p></article><article><span>04</span><h3>Verify</h3><p>Proof Mode and safe diagnostics show the outcome without touching a production environment.</p></article></div>
       </section>
 
       <section id="lab" class="section lab-section">
-        <div class="section-heading">
-          <div><p class="eyebrow">Interactive product lab</p><h2>Replay a bounded device-admission incident.</h2></div>
-          <div class="simulation-label">Simulation only · no live network connection</div>
-        </div>
-        <div class="lab-shell">
-          <aside class="lab-rail" aria-label="Scenario stages">
-            <p>Scenario: <strong>non-compliant device</strong></p>
-            <button class="stage active" data-stage="0"><span>01</span> Posture assessed</button>
-            <button class="stage" data-stage="1"><span>02</span> NAC admission</button>
-            <button class="stage" data-stage="2"><span>03</span> Zero Trust access</button>
-            <button class="stage" data-stage="3"><span>04</span> Evidence protected</button>
-            <button class="stage" data-stage="4"><span>05</span> Codex verification</button>
-            <button id="replay" class="button primary replay">Replay scenario</button>
-          </aside>
-          <div class="lab-main">
-            <div class="lab-title-row"><div><p id="stage-kicker" class="eyebrow">01 / posture</p><h3 id="stage-title">Device posture is evaluated locally.</h3></div><span id="state-badge" class="status warning">review</span></div>
-            <p id="stage-description" class="lab-description">The scenario begins with a laptop whose identity and endpoint posture must be evaluated before it reaches a protected service.</p>
-            <div class="metric-grid" id="metrics"></div>
-            <div class="explanation"><p class="eyebrow">Evidence explanation</p><p id="explanation-text">Astartis assesses identity, patch status, antivirus, disk encryption, and local firewall posture. The policy result remains deterministic and inspectable.</p></div>
-            <div class="audit-strip"><span class="pulse"></span><span id="audit-text">Awaiting local policy evaluation</span><span id="sim-label">SIMULATED</span></div>
-          </div>
+        <div class="section-heading"><div><p class="eyebrow">Interactive product lab</p><h2>Explore the Astartis x Codex dashboard without a rebuild.</h2></div><div class="simulation-label">Static product simulator - no live network connection</div></div>
+        <div class="sim-console">
+          <div class="sim-topbar"><strong>Astartis x Codex</strong><span>LOCAL ASSURANCE</span><span class="status good">77 agents catalogued</span><span class="status warning">threat: medium</span><span class="sim-pill">SIMULATED DATA</span></div>
+          <div class="sim-tabs" role="tablist" aria-label="Dashboard views"><button class="sim-tab active" data-view="overview">Overview</button><button class="sim-tab" data-view="network">Network</button><button class="sim-tab" data-view="trust">NAC + Zero Trust</button><button class="sim-tab" data-view="audit">Audit + Recovery</button><button class="sim-tab" data-view="agents">Agent fleet</button><button class="sim-tab" data-view="terminal">Safe terminal</button><button class="sim-tab" data-view="codex">Codex</button></div>
+          <div id="dashboard-view" class="dashboard-view" aria-live="polite"></div>
+          <div class="proof-dock"><div><p class="eyebrow">Proof Mode - local deterministic simulation</p><p id="proof-summary">Step 1 of 5: review the device posture.</p></div><div class="proof-actions"><button id="proof-back" class="button ghost">Back</button><button id="proof-next" class="button secondary">Next step</button><button id="replay" class="button primary">Replay slowly</button></div></div>
         </div>
       </section>
 
-      <section id="run" class="section run-section grid">
-        <div>
-          <p class="eyebrow">Judge-ready local path</p>
-          <h2>Run the real dashboard and local Codex integration on Windows.</h2>
-          <p>The repository includes the dashboard source, MCP plugin, tests, 77-agent catalogue, and a prebuilt Windows bridge. Native rebuilding is optional for evaluation.</p>
-        </div>
-        <div class="terminal-card" aria-label="PowerShell quick start">
-          <div class="terminal-top"><span></span><span></span><span></span><p>PowerShell</p></div>
-          <code>powershell -ExecutionPolicy Bypass -File .\scripts\setup-judge-demo.ps1<br />.\astartis_web\start-dashboard.bat</code>
-          <p>Then open <strong>127.0.0.1:4000</strong></p>
-        </div>
-      </section>
+      <section id="run" class="section run-section grid"><div><p class="eyebrow">Judge-ready local path</p><h2>Run the real dashboard and local Codex integration on Windows.</h2><p>The repository includes the dashboard source, MCP plugin, tests, 77-agent catalogue, and a prebuilt Windows bridge. Native rebuilding is optional for evaluation.</p></div><div class="terminal-card" aria-label="PowerShell quick start"><div class="terminal-top"><span></span><span></span><span></span><p>PowerShell</p></div><code>powershell -ExecutionPolicy Bypass -File .\scripts\setup-judge-demo.ps1<br />.\astartis_web\start-dashboard.bat</code><p>Then open <strong>127.0.0.1:4000</strong></p></div></section>
     </main>
-
-    <footer><span>Astartis x Codex</span><span>Local-first · bounded tools · explicit simulation labels</span></footer>
+    <footer><span>Astartis x Codex</span><span>Local-first - bounded tools - explicit simulation labels</span></footer>
     <script src="app.js"></script>
   </body>
 </html>
