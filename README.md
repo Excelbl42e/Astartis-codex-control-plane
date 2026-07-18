@@ -243,13 +243,18 @@ The accuracy and orchestrator tiers share the third model tag. If `clamd` or Oll
 
 ## Deploy the website lab to Vercel
 
-1. Import this GitHub repository in Vercel.
-2. Set **Root Directory** to `site`.
-3. Select **Other** as the framework preset.
-4. Leave the build command and output directory empty.
-5. Deploy.
+The live interactive product lab is available at:
 
-Vercel will automatically redeploy the static lab when I push changes to `main`.
+**[https://astartis-x-codex-56avwgpnr-astartis.vercel.app](https://astartis-x-codex-56avwgpnr-astartis.vercel.app)**
+
+It lets judges explore a clearly labelled static simulator of the dashboard surfaces without rebuilding: Overview, Network, NAC/Zero Trust, Audit/Recovery, Agent Fleet, Safe Terminal, Codex, and the slower Proof Mode walkthrough.
+
+For the complete working product, judges can use one of two paths:
+
+1. **Recommended local demo:** run `scripts/setup-judge-demo.ps1`, then `astartis_web/start-dashboard.bat`. This uses the included native bridge and does not require a C++ rebuild.
+2. **Full native rebuild:** follow [Rebuild the native engine from source](#rebuild-the-native-engine-from-source--optional-path) above, including the optional Npcap, ClamAV, Ollama, and local-model integrations when reproducing all live feature checks.
+
+The Vercel project is connected to the deployment repository and automatically redeploys the static lab when I push changes to `main`.
 
 ## Repository map
 
