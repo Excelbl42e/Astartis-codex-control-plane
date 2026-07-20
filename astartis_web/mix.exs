@@ -11,7 +11,10 @@ defmodule AstartisWeb.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      # Phoenix.CodeReloader is provided by phoenix_live_reload, which is a
+      # development-only dependency. Keep it out of test and production
+      # environments so `mix test` works from a clean judge checkout.
+      listeners: if(Mix.env() == :dev, do: [Phoenix.CodeReloader], else: [])
     ]
   end
 
