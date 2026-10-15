@@ -51,6 +51,7 @@ defmodule AstartisWebWeb.DashLive do
           unlock_state:             "IDLE",
           unlock_approvers:         [],
           last_triage:              nil,
+          triage_error:             nil,
           veeam_lock_state:         "UNLOCKED",
           veeam_backup_count:       0,
           veeam_locked_at_ms:       0,
@@ -59,6 +60,7 @@ defmodule AstartisWebWeb.DashLive do
           pipeline_stage:           nil,
           agent_statuses:           state["agent_statuses"] || [],
           agent_queue_depth:        state["agent_queue_depth"] || 0,
+          agent_status_error:       nil,
           packet_capture_running:   state["packet_capture_running"] || false,
           packet_capture_mode:      state["packet_capture_mode"] || "stopped",
           packet_capture_adapter:   state["packet_capture_adapter"] || "",
@@ -90,7 +92,6 @@ defmodule AstartisWebWeb.DashLive do
           nac_step:                 0,
           zt_result:                nil,
           sandbox_selected:         nil,
-          audit_blocks:             [],
           audit_selected:           nil,
           version_records:          [],
           version_selected:         nil,
@@ -266,12 +267,11 @@ defmodule AstartisWebWeb.DashLive do
   end
 
   def handle_info({:telemetry, "agent_status_update", data}, socket) do
-    statuses = data["agent_statuses"] || []
-    # Fallback to demo agents if bridge returns empty
-    statuses = if statuses == [], do: demo_agents(), else: statuses
     {:noreply, assign(socket,
-      agent_statuses:    statuses,
-      agent_queue_depth: data["agent_queue_depth"] || 0
+      agent_statuses:          data["agent_statuses"] || [],
+      agent_statuses_reported: true,
+      agent_status_error:      data["error"],
+      agent_queue_depth:       data["agent_queue_depth"] || 0
     )}
   end
 
@@ -301,6 +301,28 @@ defmodule AstartisWebWeb.DashLive do
       |> push_terminal("AUDIT", runtime_status_summary(data))
 
     {:noreply, socket}
+  end
+
+  def handle_info({:telemetry, "sandbox_lock_result", %{"ok" => true} = data}, socket) do
+    path = data["path"] || "?"
+    socket = push_terminal(socket, "SANDBOX", "locked path=#{path}")
+
+    case data["entry"] do
+      %{"rel_path" => rel} = entry ->
+        entries = Enum.map(socket.assigns.sandbox_entries, fn e -> if e["rel_path"] == rel, do: entry, else: e end)
+        selected = socket.assigns.sandbox_selected
+        selected = if selected && selected["rel_path"] == rel, do: entry, else: selected
+        {:noreply, assign(socket, sandbox_entries: entries, sandbox_selected: selected)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info({:telemetry, "sandbox_lock_result", data}, socket) do
+    {:noreply,
+     push_terminal(socket, "SANDBOX",
+       "lock rejected path=#{data["path"] || "?"} error=#{data["error"] || "unknown"}")}
   end
 
   def handle_info({:telemetry, "decoy_triggered", data}, socket) do
@@ -449,14 +471,23 @@ defmodule AstartisWebWeb.DashLive do
   end
 
   def handle_event("run_triage", %{"event_type" => et, "score" => score_str}, socket) do
-    score = String.to_integer(score_str)
-    AstartisWeb.Core.AstartisPort.send_command(%{
-      "cmd"  => "triage_event",
-      "args" => %{"event_type" => et, "source" => "dashboard_user", "score" => score,
-                  "detail" => "Manual triage (score=#{score})"}
-    })
-    socket = push_terminal(socket, "AI", "triage triggered event=#{et} score=#{score}")
-    {:noreply, assign(socket, last_triage: :pending)}
+    case parse_triage_score(score_str) do
+      {:ok, score} ->
+        AstartisWeb.Core.AstartisPort.send_command(%{
+          "cmd"  => "triage_event",
+          "args" => %{"event_type" => et, "source" => "dashboard_user", "score" => score,
+                      "detail" => "Manual triage (score=#{score})"}
+        })
+        socket = push_terminal(socket, "AI", "triage triggered event=#{et} score=#{score}")
+        {:noreply, assign(socket, last_triage: :pending, triage_error: nil)}
+
+      :error ->
+        reject_triage(socket, "Score must be a whole number from 0 to 100.")
+    end
+  end
+
+  def handle_event("run_triage", _params, socket) do
+    reject_triage(socket, "Choose an event type and score in the AI Triage panel.")
   end
 
   def handle_event("select_pipeline_stage", %{"stage" => stage}, socket) do
@@ -534,14 +565,22 @@ defmodule AstartisWebWeb.DashLive do
     {:noreply, assign(socket, sandbox_selected: entry)}
   end
 
+  # The outcome is logged by the "sandbox_lock_result" handler once the bridge answers.
   def handle_event("sandbox_lock", %{"path" => path}, socket) do
     AstartisWeb.Core.AstartisPort.send_command(%{
       "cmd"  => "sandbox_lock_entry",
       "args" => %{"path" => path}
     })
-    socket = push_terminal(socket, "SANDBOX", "locked path=#{path}")
+    socket = push_terminal(socket, "SANDBOX", "lock requested path=#{path}")
     {:noreply, socket}
   end
+
+  def handle_event("audit_select", %{"id" => id}, socket) do
+    selected = if socket.assigns.audit_selected == id, do: nil, else: id
+    {:noreply, assign(socket, audit_selected: selected)}
+  end
+
+  def handle_event("audit_select", _params, socket), do: {:noreply, socket}
 
   def handle_event("plant_decoy", _params, socket) do
     AstartisWeb.Core.AstartisPort.send_command(%{
@@ -590,6 +629,19 @@ defmodule AstartisWebWeb.DashLive do
 
   def handle_event("close_modal", _params, socket) do
     {:noreply, assign(socket, show_about_modal: false, show_worm_modal: false)}
+  end
+
+  defp parse_triage_score(score_str) when is_binary(score_str) do
+    case Integer.parse(String.trim(score_str)) do
+      {score, ""} when score in 0..100 -> {:ok, score}
+      _ -> :error
+    end
+  end
+  defp parse_triage_score(_score), do: :error
+
+  defp reject_triage(socket, message) do
+    socket = push_terminal(socket, "AI", "triage rejected: #{message}")
+    {:noreply, assign(socket, triage_error: message)}
   end
 
   # ---------------------------------------------------------------------------
@@ -2068,6 +2120,9 @@ defmodule AstartisWebWeb.DashLive do
                 <span>⚡</span> Run local AI triage
               </button>
             </form>
+            <%= if @triage_error do %>
+              <div style="color:#f87171;font-size:11px;margin-bottom:6px;" data-testid="triage-error"><%= @triage_error %></div>
+            <% end %>
             <%= cond do %>
               <% @last_triage == nil -> %>
                 <div style="color:var(--text-secondary);font-size:11px;">No triage run yet.</div>
@@ -2201,7 +2256,16 @@ defmodule AstartisWebWeb.DashLive do
 
           <div class="agent-grid" role="list" aria-label="Astartis agent statuses">
             <%= if Enum.empty?(@agent_statuses) do %>
-              <div class="agent-empty">The native bridge is still loading the agent catalog.</div>
+              <div class="agent-empty" data-testid="agent-empty">
+                <%= cond do %>
+                  <% not @agent_statuses_reported -> %>
+                    Waiting for the native bridge to report the agent catalog.
+                  <% @agent_status_error -> %>
+                    The bridge returned no agents (<%= @agent_status_error %>).
+                  <% true -> %>
+                    The bridge returned no agents.
+                <% end %>
+              </div>
             <% else %>
               <%= for agent <- Enum.sort_by(@agent_statuses, &(&1["name"] || "")) do %>
                 <%
@@ -2408,8 +2472,9 @@ defmodule AstartisWebWeb.DashLive do
                 <% end %>
                 <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                   <button class="btn btn-ghost btn-sm" phx-click="sandbox_lock"
-                          phx-value-path={@sandbox_selected["rel_path"]} style="cursor:pointer;">
-                    🔒 Lock File
+                          phx-value-path={@sandbox_selected["rel_path"]} style="cursor:pointer;"
+                          disabled={@sandbox_selected["locked"] == true}>
+                    <%= if @sandbox_selected["locked"], do: "🔒 Locked", else: "🔒 Lock File" %>
                   </button>
                   <button class="btn btn-ghost btn-sm" style="cursor:pointer;">
                     📋 Copy Path
@@ -2578,24 +2643,44 @@ defmodule AstartisWebWeb.DashLive do
       </div>
 
       <div class="card">
-        <div class="card-title">Block Chain Visualization — <%= @chain_length %> entries</div>
+        <div class="card-title">
+          Block Chain Visualization —
+          <%= if @audit_entries == [], do: "#{@chain_length} entries", else: "latest #{length(@audit_entries)} of #{@chain_length} entries" %>
+        </div>
         <div class="chain-blocks">
-          <%= for {block, i} <- Enum.with_index(build_demo_audit_blocks(@chain_length, @chain_head)) do %>
-            <div class={"chain-block #{if @audit_selected == i, do: "selected", else: ""}"}
-                 phx-click="audit_select" phx-value-idx={i}>
-              <div style="font-size:9px;color:#4b5563;margin-bottom:2px;">#<%= block.index %></div>
-              <div class="chain-event"><%= block.event %></div>
-              <div class="chain-hash"><%= String.slice(block.hash, 0, 12) %>...</div>
+          <%= for {entry, i} <- Enum.with_index(@audit_entries) do %>
+            <%= if i > 0 do %><div class="chain-arrow">→</div><% end %>
+            <div class={"chain-block #{if @audit_selected == entry["entry_id"], do: "selected", else: ""}"}
+                 phx-click="audit_select" phx-value-id={entry["entry_id"]} data-testid="audit-block">
+              <div style="font-size:9px;color:#4b5563;margin-bottom:2px;">#<%= entry["index"] %></div>
+              <div class="chain-event"><%= entry["event_type"] %></div>
+              <div class="chain-hash"><%= String.slice(entry["current_hash"] || "", 0, 12) %>...</div>
             </div>
-            <div class="chain-arrow">→</div>
           <% end %>
-          <%= if @chain_length == 0 do %>
-            <div style="color:var(--text-secondary);font-size:12px;padding:20px;">
-              No audit entries yet — run the demo to generate events
+          <%= if @audit_entries == [] do %>
+            <div style="color:var(--text-secondary);font-size:12px;padding:20px;" data-testid="audit-empty">
+              <%= if @chain_length == 0 do %>
+                No audit entries reported by the bridge yet — run the demo to generate events
+              <% else %>
+                The bridge reports <%= @chain_length %> chain entries but sent no entry details.
+                Restart Astartis so it uses the current bridge build.
+              <% end %>
             </div>
           <% end %>
         </div>
       </div>
+
+      <%= for entry <- Enum.filter(@audit_entries, &(&1["entry_id"] == @audit_selected)) do %>
+        <div class="card anim-slide" style="margin-top:12px;" data-testid="audit-entry-detail">
+          <div class="card-title">Entry #<%= entry["index"] %> — <%= entry["event_type"] %></div>
+          <div class="mono" style="font-size:11px;display:flex;flex-direction:column;gap:4px;word-break:break-all;">
+            <div><span class="stat-label">Entry ID:</span> <%= entry["entry_id"] %></div>
+            <div><span class="stat-label">Recorded:</span> <%= audit_timestamp(entry["timestamp"]) %></div>
+            <div><span class="stat-label">Previous hash:</span> <%= entry["previous_hash"] %></div>
+            <div><span class="stat-label">Entry hash:</span> <%= entry["current_hash"] %></div>
+          </div>
+        </div>
+      <% end %>
 
       <div class="grid-2" style="margin-top:12px;">
         <div class="card">
@@ -2618,17 +2703,32 @@ defmodule AstartisWebWeb.DashLive do
         </div>
 
         <div class="card">
-          <div class="card-title">Tamper Detection Demo</div>
+          <div class="card-title">Tamper Detection</div>
           <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
             The audit chain uses SHA-256 hash chaining. Each block includes the previous hash — any modification breaks the chain.
           </p>
-          <div style="padding:8px;background:rgba(16,185,129,0.08);border:1px solid var(--success);border-radius:6px;">
-            <div style="font-size:11px;color:var(--success);">
-              ✓ Chain integrity: all hashes verified by C++ backend
-            </div>
-            <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">
-              ECDSA(secp256k1) signatures applied on every entry
-            </div>
+          <%= cond do %>
+            <% @chain_valid == false -> %>
+              <div style="padding:8px;background:rgba(239,68,68,0.08);border:1px solid #ef4444;border-radius:6px;">
+                <div style="font-size:11px;color:#f87171;">
+                  ✗ Chain integrity: the C++ bridge found an entry whose hash does not match
+                </div>
+              </div>
+            <% @chain_valid == true and @chain_length > 0 -> %>
+              <div style="padding:8px;background:rgba(16,185,129,0.08);border:1px solid var(--success);border-radius:6px;">
+                <div style="font-size:11px;color:var(--success);">
+                  ✓ Chain integrity: all <%= @chain_length %> hashes verified by the C++ bridge
+                </div>
+              </div>
+            <% true -> %>
+              <div style="padding:8px;border:1px solid var(--border);border-radius:6px;">
+                <div style="font-size:11px;color:var(--text-secondary);">
+                  <%= if @chain_length == 0, do: "No entries to verify yet", else: "Chain integrity not reported by the bridge" %>
+                </div>
+              </div>
+          <% end %>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">
+            Entry hash = SHA-256(entry_id + timestamp + event_type + payload + previous_hash)
           </div>
         </div>
       </div>
@@ -3683,6 +3783,7 @@ defmodule AstartisWebWeb.DashLive do
       chain_length:            data["chain_length"]            || 0,
       chain_valid:             Map.get(data, "chain_valid", true),
       chain_head:              data["chain_head"]              || "",
+      audit_entries:           data["audit_entries"]           || socket.assigns[:audit_entries] || [],
       chaos_K:                 data["chaos_K"]                 || 0.0,
       chaos_anomalous:         data["chaos_anomalous"]         || false,
       chaos_windows:           data["chaos_windows"]           || 0,
@@ -3710,6 +3811,8 @@ defmodule AstartisWebWeb.DashLive do
       packet_anomalous:        Map.get(data, "packet_anomalous", socket.assigns[:packet_anomalous] || false),
       bridge_elevated:         Map.get(data, "elevated", socket.assigns[:bridge_elevated]),
       agent_statuses:          data["agent_statuses"]          || socket.assigns[:agent_statuses] || [],
+      # Distinguishes "bridge has not reported yet" from "bridge reported none".
+      agent_statuses_reported: Map.has_key?(data, "agent_statuses") || socket.assigns[:agent_statuses_reported] || false,
       agent_queue_depth:       data["agent_queue_depth"]       || socket.assigns[:agent_queue_depth] || 0
     )
   end
@@ -3953,26 +4056,16 @@ defmodule AstartisWebWeb.DashLive do
   defp zt_decision_badge(_), do: "badge-red"
 
   # ---------------------------------------------------------------------------
-  # Helpers: audit chain demo blocks
+  # Helpers: audit chain
   # ---------------------------------------------------------------------------
 
-  defp build_demo_audit_blocks(0, _), do: []
-  defp build_demo_audit_blocks(length, head) do
-    events = ["worm_lock", "packet_anomaly", "rule_fire", "ai_triage", "decoy_triggered",
-              "firewall_block", "agent_task", "tier_change", "veeam_check", "scan_result"]
-    last = min(length, 8)
-    Enum.map(0..(last - 1), fn i ->
-      %{
-        index: length - last + i + 1,
-        event: Enum.at(events, rem(i, length(events))),
-        hash:  if(i == last - 1, do: head, else: "#{Integer.to_string(i + 1, 16) |> String.pad_leading(8, "0")}abcdef")
-      }
-    end)
+  defp audit_timestamp(ms) when is_integer(ms) do
+    case DateTime.from_unix(ms, :millisecond) do
+      {:ok, at} -> Calendar.strftime(at, "%Y-%m-%d %H:%M:%S.%f UTC")
+      {:error, _reason} -> "unknown"
+    end
   end
-
-  # ---------------------------------------------------------------------------
-  # Helpers: audit event handler
-  # ---------------------------------------------------------------------------
+  defp audit_timestamp(_ms), do: "unknown"
 
   # ---------------------------------------------------------------------------
   # Helpers: terminal tag colour
@@ -4216,74 +4309,6 @@ defmodule AstartisWebWeb.DashLive do
       {5, "Installation",     true,  "Credential poisoning (Step 10) serves fake credentials to implant"},
       {6, "C2",               true,  "Active response (Step 11) throttles and honeypots C2 communications"},
       {7, "Actions on Obj.", true,  "Sandbox containment + WORM lock (Steps 9,3) prevents data exfiltration"},
-    ]
-  end
-
-  # ---------------------------------------------------------------------------
-  # Demo agents — 50 AI agent personas for the grid
-  # ---------------------------------------------------------------------------
-
-  defp demo_agents do
-    [
-      %{"name" => "sentinel_alpha", "emoji" => "🛡️", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Primary network perimeter guardian. Monitors all ingress/egress traffic for anomalous patterns.", "tasks_completed" => 142, "uptime_s" => 86400},
-      %{"name" => "sentinel_beta", "emoji" => "🛡️", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Secondary perimeter sentinel with deep packet inspection capabilities.", "tasks_completed" => 98, "uptime_s" => 86400},
-      %{"name" => "threat_hunter_1", "emoji" => "🔍", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Proactive threat hunter — scans logs for IOCs and TTPs.", "tasks_completed" => 267, "uptime_s" => 43200},
-      %{"name" => "threat_hunter_2", "emoji" => "🔍", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Proactive threat hunter — lateral movement detection specialist.", "tasks_completed" => 189, "uptime_s" => 43200},
-      %{"name" => "malware_analyst", "emoji" => "🦠", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Static and dynamic malware analysis. YARA rule generation.", "tasks_completed" => 45, "uptime_s" => 7200},
-      %{"name" => "forensics_lead", "emoji" => "🔬", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Digital forensics — disk, memory, and network artifact analysis.", "tasks_completed" => 23, "uptime_s" => 3600},
-      %{"name" => "incident_commander", "emoji" => "👨‍✈️", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Orchestrates incident response playbooks and stakeholder comms.", "tasks_completed" => 12, "uptime_s" => 1800},
-      %{"name" => "ioc_curator", "emoji" => "📋", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Maintains threat intelligence IOC database with STIX/TAXII feeds.", "tasks_completed" => 512, "uptime_s" => 86400},
-      %{"name" => "sigint_analyst", "emoji" => "📡", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Signals intelligence — metadata analysis and traffic correlation.", "tasks_completed" => 89, "uptime_s" => 21600},
-      %{"name" => "vuln_scanner", "emoji" => "🔧", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Continuous vulnerability scanning and CVSS scoring.", "tasks_completed" => 334, "uptime_s" => 86400},
-      %{"name" => "patch_advisor", "emoji" => "🩹", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Recommends and validates patch deployment strategies.", "tasks_completed" => 156, "uptime_s" => 86400},
-      %{"name" => "compliance_auditor", "emoji" => "📜", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "NIST 800-53, ISO 27001, and PCI-DSS compliance validation.", "tasks_completed" => 78, "uptime_s" => 43200},
-      %{"name" => "soc_analyst_l1", "emoji" => "👁️", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Tier-1 SOC analyst — alert triage and initial classification.", "tasks_completed" => 1024, "uptime_s" => 86400},
-      %{"name" => "soc_analyst_l2", "emoji" => "👁️", "state" => "RUNNING", "model" => "granite3.1-dense:8b", "description" => "Tier-2 SOC analyst — deep dive investigations and escalation.", "tasks_completed" => 567, "uptime_s" => 86400},
-      %{"name" => "soc_analyst_l3", "emoji" => "👁️", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Tier-3 SOC analyst — advanced persistent threat hunting.", "tasks_completed" => 234, "uptime_s" => 86400},
-      %{"name" => "deception_engineer", "emoji" => "🎭", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Designs and deploys honeypots, honeytokens, and decoy assets.", "tasks_completed" => 45, "uptime_s" => 7200},
-      %{"name" => "behavioral_ai", "emoji" => "🧠", "state" => "RUNNING", "model" => "granite3.1-dense:8b", "description" => "UEBA — user and entity behavioral anomaly detection.", "tasks_completed" => 890, "uptime_s" => 86400},
-      %{"name" => "crypto_guardian", "emoji" => "🔐", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Cryptographic health monitoring — key rotation, cipher suites.", "tasks_completed" => 67, "uptime_s" => 43200},
-      %{"name" => "dlp_sentinel", "emoji" => "🚫", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Data loss prevention — egress monitoring and classification.", "tasks_completed" => 445, "uptime_s" => 86400},
-      %{"name" => "cloud_sec_ops", "emoji" => "☁️", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Cloud security posture management — CSPM and misconfig detection.", "tasks_completed" => 123, "uptime_s" => 21600},
-      %{"name" => "container_guard", "emoji" => "🐳", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Container and Kubernetes security — image scanning, runtime policies.", "tasks_completed" => 89, "uptime_s" => 21600},
-      %{"name" => "api_sentinel", "emoji" => "🔌", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "API security gateway — rate limiting, auth validation, OWASP Top 10.", "tasks_completed" => 234, "uptime_s" => 43200},
-      %{"name" => "iam_overseer", "emoji" => "🆔", "state" => "RUNNING", "model" => "granite3.1-dense:8b", "description" => "Identity and access management — privileged account monitoring.", "tasks_completed" => 567, "uptime_s" => 86400},
-      %{"name" => "zero_trust_engine", "emoji" => "🎯", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Zero trust architecture enforcement — continuous verification.", "tasks_completed" => 78, "uptime_s" => 21600},
-      %{"name" => "siem_correlator", "emoji" => "📊", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "SIEM rule engine — multi-source event correlation and enrichment.", "tasks_completed" => 1024, "uptime_s" => 86400},
-      %{"name" => "edr_responder", "emoji" => "💻", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Endpoint detection and response — automated isolation and remediation.", "tasks_completed" => 345, "uptime_s" => 43200},
-      %{"name" => "xdr_orchestrator", "emoji" => "🌐", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Extended detection and response — cross-layer correlation.", "tasks_completed" => 156, "uptime_s" => 21600},
-      %{"name" => "network_forensics", "emoji" => "🕸️", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Network traffic analysis — PCAP reconstruction and flow analysis.", "tasks_completed" => 67, "uptime_s" => 7200},
-      %{"name" => "wireless_guardian", "emoji" => "📶", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Wireless network security — rogue AP detection and spectrum analysis.", "tasks_completed" => 89, "uptime_s" => 21600},
-      %{"name" => "iot_sentinel", "emoji" => "📟", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "IoT device security — firmware analysis and anomaly detection.", "tasks_completed" => 123, "uptime_s" => 43200},
-      %{"name" => "ot_guardian", "emoji" => "🏭", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Operational technology — ICS/SCADA security monitoring.", "tasks_completed" => 34, "uptime_s" => 7200},
-      %{"name" => "supply_chain_guard", "emoji" => "📦", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Software supply chain — SBOM validation and dependency scanning.", "tasks_completed" => 78, "uptime_s" => 21600},
-      %{"name" => "red_team_lead", "emoji" => "🎩", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Adversary simulation — red team exercise planning and execution.", "tasks_completed" => 23, "uptime_s" => 3600},
-      %{"name" => "blue_team_lead", "emoji" => "🛡️", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Defense optimization — purple team collaboration and gap analysis.", "tasks_completed" => 45, "uptime_s" => 7200},
-      %{"name" => "phishing_defender", "emoji" => "🎣", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Email security — phishing detection, sandbox detonation, user training.", "tasks_completed" => 2048, "uptime_s" => 86400},
-      %{"name" => "ransomware_shield", "emoji" => "🛡️", "state" => "RUNNING", "model" => "granite3.1-dense:8b", "description" => "Ransomware-specific protection — behavioral indicators and canary files.", "tasks_completed" => 512, "uptime_s" => 86400},
-      %{"name" => "insider_threat", "emoji" => "🕵️", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Insider threat detection — behavioral baselines and anomaly scoring.", "tasks_completed" => 167, "uptime_s" => 43200},
-      %{"name" => "fraud_detector", "emoji" => "💳", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Financial fraud — transaction pattern analysis and alerting.", "tasks_completed" => 234, "uptime_s" => 43200},
-      %{"name" => "botnet_tracker", "emoji" => "🤖", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Botnet C2 tracking — DGA detection and sinkhole coordination.", "tasks_completed" => 89, "uptime_s" => 21600},
-      %{"name" => "darkweb_monitor", "emoji" => "🌑", "state" => "RUNNING", "model" => "granite3.1-dense:8b", "description" => "Dark web intelligence — credential leaks, threat actor forums.", "tasks_completed" => 445, "uptime_s" => 86400},
-      %{"name" => "geoint_analyst", "emoji" => "🌍", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Geospatial threat intelligence — attack origin and campaign mapping.", "tasks_completed" => 67, "uptime_s" => 7200},
-      %{"name" => "attribution_engine", "emoji" => "🎯", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Threat actor attribution — TTP correlation and MITRE mapping.", "tasks_completed" => 34, "uptime_s" => 3600},
-      %{"name" => "auto_remediator", "emoji" => "⚡", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "SOAR playbooks — automated containment and eradication.", "tasks_completed" => 234, "uptime_s" => 43200},
-      %{"name" => "ticket_router", "emoji" => "🎫", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Case management — auto-triage, SLA tracking, and escalation.", "tasks_completed" => 1024, "uptime_s" => 86400},
-      %{"name" => "report_generator", "emoji" => "📑", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Executive and technical reporting — metrics, trends, and KPIs.", "tasks_completed" => 156, "uptime_s" => 21600},
-      %{"name" => "war_room_ai", "emoji" => "🏢", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Crisis management — scenario planning and resource allocation.", "tasks_completed" => 12, "uptime_s" => 1800},
-      %{"name" => "metrics_engineer", "emoji" => "📈", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "Security metrics — MTTR, MTTD, coverage gaps, and maturity scores.", "tasks_completed" => 789, "uptime_s" => 86400},
-      %{"name" => "threat_intel_feed", "emoji" => "📰", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "STIX/TAXII feed ingestion and indicator lifecycle management.", "tasks_completed" => 2048, "uptime_s" => 86400},
-      %{"name" => "sandbox_analyst", "emoji" => "🔬", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Malware sandbox — dynamic analysis and IOC extraction.", "tasks_completed" => 67, "uptime_s" => 7200},
-      %{"name" => "memory_forensics", "emoji" => "🧠", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Memory dump analysis — rootkit detection and process hollowing.", "tasks_completed" => 34, "uptime_s" => 3600},
-      %{"name" => "disk_forensics", "emoji" => "💾", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Disk image forensics — file carving, timeline analysis, and hashing.", "tasks_completed" => 23, "uptime_s" => 3600},
-      %{"name" => "mobile_sec_ops", "emoji" => "📱", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Mobile device security — MDM, app vetting, and sideload detection.", "tasks_completed" => 89, "uptime_s" => 21600},
-      %{"name" => "web_app_firewall", "emoji" => "🧱", "state" => "RUNNING", "model" => "granite3.1-moe:3b", "description" => "WAF optimization — OWASP rules, bot mitigation, and DDoS protection.", "tasks_completed" => 512, "uptime_s" => 86400},
-      %{"name" => "backup_guardian", "emoji" => "💾", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Backup integrity — immutability, air-gapping, and restore validation.", "tasks_completed" => 123, "uptime_s" => 43200},
-      %{"name" => "dr_coordinator", "emoji" => "🏥", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Disaster recovery — failover testing, RTO/RPO validation, and runbooks.", "tasks_completed" => 45, "uptime_s" => 7200},
-      %{"name" => "chaos_engineer", "emoji" => "🔥", "state" => "IDLE", "model" => "granite3.1-dense:8b", "description" => "Resilience testing — chaos engineering and failure injection.", "tasks_completed" => 23, "uptime_s" => 3600},
-      %{"name" => "entropy_guardian", "emoji" => "🌊", "state" => "RUNNING", "model" => "granite3.1-dense:8b", "description" => "Network entropy analysis — anomaly detection via Shannon entropy.", "tasks_completed" => 890, "uptime_s" => 86400},
-      %{"name" => "policy_enforcer", "emoji" => "📜", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Security policy automation — GPO, CASB, and firewall rule validation.", "tasks_completed" => 234, "uptime_s" => 43200},
-      %{"name" => "awareness_trainer", "emoji" => "🎓", "state" => "IDLE", "model" => "granite3.1-moe:3b", "description" => "Security awareness — simulated phishing, training modules, and metrics.", "tasks_completed" => 156, "uptime_s" => 21600}
     ]
   end
 end

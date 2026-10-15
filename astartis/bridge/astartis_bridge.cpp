@@ -686,6 +686,47 @@ static std::string terminal_audit_payload(const TerminalDiagnosticResult& result
 } // namespace
 
 // ---------------------------------------------------------------------------
+// Dashboard serialisers shared by the snapshot and command replies
+// ---------------------------------------------------------------------------
+
+// Number of most recent audit entries carried in every snapshot/tick.
+static constexpr size_t kSnapshotAuditEntries = 8;
+
+static json sandbox_entry_json(const astartis::sandbox::SandboxEntry& e)
+{
+    return {
+        {"rel_path",      e.rel_path},
+        {"type",          e.type == EntryType::FILE ? "file" : "dir"},
+        {"size_bytes",    e.size_bytes},
+        {"version",       e.version},
+        {"locked",        e.locked},
+        {"last_modified", e.last_modified}
+    };
+}
+
+// The last max_entries audit entries, oldest first. "index" is the 1-based
+// position in the chain. Payloads are left out: they can carry paths and
+// addresses, and the dashboard chain view only needs the linkage fields.
+static json recent_audit_entries_json(size_t max_entries)
+{
+    const auto all   = g_audit.get_all_entries();
+    const size_t first = all.size() > max_entries ? all.size() - max_entries : 0;
+    json out = json::array();
+    for (size_t i = first; i < all.size(); ++i) {
+        const auto& e = all[i];
+        out.push_back({
+            {"index",         i + 1},
+            {"entry_id",      e.entry_id},
+            {"event_type",    e.event_type},
+            {"timestamp",     e.timestamp},
+            {"previous_hash", e.previous_hash},
+            {"current_hash",  e.current_hash}
+        });
+    }
+    return out;
+}
+
+// ---------------------------------------------------------------------------
 // Snapshot for the 500 ms tick
 // ---------------------------------------------------------------------------
 
@@ -718,6 +759,7 @@ static json build_snapshot()
         auto h = g_audit.get_chain_head_hash();
         snap["chain_head"] = h.size() >= 12 ? h.substr(0, 12) : h;
     }
+    snap["audit_entries"] = recent_audit_entries_json(kSnapshotAuditEntries);
 
     // Chaos
     snap["chaos_K"]         = g_latest_K.load();
@@ -738,14 +780,7 @@ static json build_snapshot()
     // Sandbox file tree
     json entries = json::array();
     for (const auto& e : g_sandbox->get_tree()) {
-        entries.push_back({
-            {"rel_path",      e.rel_path},
-            {"type",          e.type == EntryType::FILE ? "file" : "dir"},
-            {"size_bytes",    e.size_bytes},
-            {"version",       e.version},
-            {"locked",        e.locked},
-            {"last_modified", e.last_modified}
-        });
+        entries.push_back(sandbox_entry_json(e));
     }
     snap["sandbox_entries"] = entries;
     snap["sandbox_root"]    = g_sandbox_root;
@@ -1161,16 +1196,36 @@ static void dispatch(const json& msg)
     if (cmd == "sandbox_get_tree") {
         json entries = json::array();
         for (const auto& e : g_sandbox->get_tree()) {
-            entries.push_back({
-                {"rel_path",      e.rel_path},
-                {"type",          e.type == EntryType::FILE ? "file" : "dir"},
-                {"size_bytes",    e.size_bytes},
-                {"version",       e.version},
-                {"locked",        e.locked},
-                {"last_modified", e.last_modified}
-            });
+            entries.push_back(sandbox_entry_json(e));
         }
         emit({{"event", "sandbox_tree"}, {"data", entries}});
+        return;
+    }
+
+    // -------------------------------------------------------------------
+    // sandbox_lock_entry
+    // Lock one sandbox entry, addressed by the rel_path the snapshot lists.
+    // {"cmd":"sandbox_lock_entry","args":{"path":"etc/nginx.conf"}}
+    // Returns: {"event":"sandbox_lock_result","data":{"path":...,"ok":bool,
+    //           "error":"...","entry":{...}|null}}
+    // -------------------------------------------------------------------
+    if (cmd == "sandbox_lock_entry") {
+        const std::string rel = args.value("path", "");
+        json result = {{"path", rel}, {"ok", false}, {"error", ""}, {"entry", nullptr}};
+        if (rel.empty()) {
+            result["error"] = "path is required";
+        } else {
+            // Sandbox::lock_entry rejects anything outside the root or with "..".
+            const std::string abs = g_sandbox->root_path() + "/" + rel;
+            auto r = g_sandbox->lock_entry(abs, "dashboard_request");
+            result["ok"]    = r.ok;
+            result["error"] = r.error;
+            astartis::sandbox::SandboxEntry locked;
+            if (r.ok && g_sandbox->read(abs, locked).ok) {
+                result["entry"] = sandbox_entry_json(locked);
+            }
+        }
+        emit({{"event", "sandbox_lock_result"}, {"data", result}});
         return;
     }
 
