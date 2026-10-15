@@ -2,7 +2,6 @@
 const POLL_INTERVAL_MS = 5000;
 const MAX_LOG_LINES = 500;
 const MAX_TERMINAL_LINES = 1000;
-const API_BASE = 'http://127.0.0.1:9876';
 
 // ===== STATE =====
 let currentTab = 'dashboard';
@@ -60,7 +59,8 @@ function switchTab(tab) {
 // ===== JSON POLLING =====
 async function loadDashboardData() {
     try {
-        const res = await fetch(`${API_BASE}/dashboard_data.json?t=${Date.now()}`);
+        // Same-origin: the dashboard server sends no CORS headers.
+        const res = await fetch(`/dashboard_data.json?t=${Date.now()}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         dashboardData = data;
@@ -580,11 +580,11 @@ els.terminalInput.addEventListener('keydown', (e) => {
     }
 });
 
-// ===== 20 COMMANDS =====
-const SYSTEM_COMMANDS = ['ipconfig', 'tasklist', 'netstat', 'systeminfo',
-                         'getmac', 'whoami', 'hostname', 'ver', 'ping'];
-
-async function handleTerminalCommand(cmd) {
+// ===== COMMANDS =====
+// Every command below reads dashboard_data.json. This page never executes host
+// commands; allowlisted host diagnostics run only in the Phoenix dashboard's
+// safe terminal, through the bridge's fixed `terminal_execute` map.
+function handleTerminalCommand(cmd) {
     const base = cmd.split(' ')[0].toLowerCase();
     const args = cmd.split(' ').slice(1);
 
@@ -601,20 +601,8 @@ async function handleTerminalCommand(cmd) {
         addTerminalLine('  decoy         — Decoy event log', 'info');
         addTerminalLine('  scan          — Run security scan', 'info');
         addTerminalLine('  clear         — Clear terminal', 'info');
-        addTerminalLine('=== Windows Commands ===', 'info');
-        addTerminalLine('  ipconfig      — Network configuration', 'info');
-        addTerminalLine('  ipconfig /all — Full adapter details', 'info');
-        addTerminalLine('  tasklist      — Running processes', 'info');
-        addTerminalLine('  netstat -an   — Network connections', 'info');
-        addTerminalLine('  systeminfo    — System information', 'info');
-        addTerminalLine('  getmac        — MAC addresses', 'info');
-        addTerminalLine('  whoami        — Current user', 'info');
-        addTerminalLine('  hostname      — Computer name', 'info');
-        addTerminalLine('  ver           — Windows version', 'info');
-        addTerminalLine('  netsh advfirewall show currentprofile — Firewall state', 'info');
-        addTerminalLine('  ping 8.8.8.8  — Ping Google DNS', 'info');
-        addTerminalLine('  Get-Process   — PowerShell process list', 'info');
-        addTerminalLine('  Get-Service   — PowerShell service list', 'info');
+        addTerminalLine('Host diagnostics (ipconfig /all, whoami, systeminfo, ...) run only in', 'info');
+        addTerminalLine('the Phoenix dashboard safe terminal: astartis_web\\start-dashboard.bat', 'info');
         return;
     }
 
@@ -668,29 +656,6 @@ async function handleTerminalCommand(cmd) {
         return;
     }
     if (base === 'clear') { els.terminalContent.innerHTML = ''; terminalLines = []; return; }
-
-    // ---- Windows system commands (real execution via HTTP backend) ----
-    const isSystem   = SYSTEM_COMMANDS.includes(base);
-    const isPSh      = cmd.indexOf('Get-') === 0 || cmd.indexOf('get-') === 0;
-    const isNetsh    = base === 'netsh';
-    if (isSystem || isPSh || isNetsh) {
-        addTerminalLine('Executing...', 'info');
-        try {
-            const res = await fetch(`${API_BASE}/exec`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cmd }),
-            });
-            const json = await res.json();
-            json.output.split('\n').forEach(line => {
-                if (line.trim()) addTerminalLine(line, 'info');
-            });
-        } catch (e) {
-            addTerminalLine(
-                'Error: Cannot reach backend. Start demo_dashboard_data.exe first.', 'error');
-        }
-        return;
-    }
 
     addTerminalLine(`Unknown command: ${cmd}. Type 'help' for the full list.`, 'error');
 }

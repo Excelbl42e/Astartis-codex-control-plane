@@ -2276,7 +2276,7 @@ int main(int argc, char* argv[])
 
         g_dashboard_writer->start(5);
 
-        // Start HTTP server for dashboard (serves static files + /dashboard_data.json + /exec)
+        // Start read-only HTTP server for dashboard (static files + /dashboard_data.json)
         g_dashboard_server = std::make_unique<astartis::dashboard::DashboardServer>(
             out_dir, out_dir + "/dashboard_data.json", 9876);
         g_dashboard_server->start();

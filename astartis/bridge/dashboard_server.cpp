@@ -16,12 +16,44 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <vector>
 #include <string>
-#include <cstdio>
 
 namespace astartis {
 namespace dashboard {
+
+namespace {
+
+bool ascii_iequals(const std::string& a, const std::string& b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        char x = a[i], y = b[i];
+        if (x >= 'A' && x <= 'Z') x = static_cast<char>(x - 'A' + 'a');
+        if (y >= 'A' && y <= 'Z') y = static_cast<char>(y - 'A' + 'a');
+        if (x != y) return false;
+    }
+    return true;
+}
+
+// Value of the first header called `name` (case-insensitive), trimmed;
+// empty if absent.  `headers_start` is the offset just past the request line.
+std::string header_value(const std::string& req, size_t headers_start, const std::string& name) {
+    size_t pos = headers_start;
+    while (pos < req.size()) {
+        size_t eol = req.find("\r\n", pos);
+        if (eol == std::string::npos || eol == pos) break;  // end of headers
+        std::string line = req.substr(pos, eol - pos);
+        pos = eol + 2;
+        size_t colon = line.find(':');
+        if (colon == std::string::npos || !ascii_iequals(line.substr(0, colon), name)) continue;
+        size_t first = line.find_first_not_of(" \t", colon + 1);
+        if (first == std::string::npos) return "";
+        size_t last = line.find_last_not_of(" \t");
+        return line.substr(first, last - first + 1);
+    }
+    return "";
+}
+
+} // namespace
 
 DashboardServer::DashboardServer(const std::string& static_dir,
                                  const std::string& json_path,
@@ -105,29 +137,49 @@ void DashboardServer::handle_client(uintptr_t client) {
     if (eol == std::string::npos) return;
     std::string first_line = req.substr(0, eol);
 
-    // CORS preflight
-    if (first_line.find("OPTIONS") == 0) {
-        send_response(client, "204 No Content", "", "text/plain"); return;
+    // Request line: METHOD SP request-target SP HTTP-version
+    size_t sp1 = first_line.find(' ');
+    size_t sp2 = (sp1 == std::string::npos) ? std::string::npos : first_line.find(' ', sp1 + 1);
+    if (sp2 == std::string::npos) {
+        send_response(client, "400 Bad Request", "Bad request", "text/plain"); return;
+    }
+    std::string method = first_line.substr(0, sp1);
+    std::string target = first_line.substr(sp1 + 1, sp2 - sp1 - 1);
+
+    // Read-only: the dashboard only loads its own files and polls JSON.
+    // There is deliberately no CORS support and no command endpoint.
+    if (method != "GET") {
+        send_response(client, "405 Method Not Allowed", "Method not allowed", "text/plain",
+                      "Allow: GET\r\n");
+        return;
     }
 
-    if (first_line.find("GET /dashboard_data.json") != std::string::npos) {
+    // Only answer requests addressed to this loopback listener, so a page on
+    // another domain cannot reach it through DNS rebinding.
+    if (!is_allowed_host(header_value(req, eol + 2, "Host"))) {
+        send_response(client, "403 Forbidden", "Forbidden", "text/plain"); return;
+    }
+
+    std::string path = target.substr(0, target.find('?'));
+    if (path == "/dashboard_data.json") {
         serve_file(client, json_path_, "application/json"); return;
     }
-    if (first_line.find("GET / ") == 0 ||
-        first_line.find("GET /index.html") != std::string::npos) {
+    if (path == "/" || path == "/index.html") {
         serve_file(client, static_dir_ + "/index.html", "text/html"); return;
     }
-    if (first_line.find("GET /style.css") != std::string::npos) {
+    if (path == "/style.css") {
         serve_file(client, static_dir_ + "/style.css", "text/css"); return;
     }
-    if (first_line.find("GET /script.js") != std::string::npos) {
+    if (path == "/script.js") {
         serve_file(client, static_dir_ + "/script.js", "application/javascript"); return;
-    }
-    if (first_line.find("POST /exec") != std::string::npos) {
-        handle_exec(client, req); return;
     }
 
     send_response(client, "404 Not Found", "Not found", "text/plain");
+}
+
+bool DashboardServer::is_allowed_host(const std::string& host) const {
+    const std::string port = ":" + std::to_string(port_);
+    return ascii_iequals(host, "127.0.0.1" + port) || ascii_iequals(host, "localhost" + port);
 }
 
 void DashboardServer::serve_file(uintptr_t client, const std::string& path,
@@ -141,113 +193,15 @@ void DashboardServer::serve_file(uintptr_t client, const std::string& path,
     send_response(client, "200 OK", content, content_type);
 }
 
-void DashboardServer::handle_exec(uintptr_t client, const std::string& req) {
-    size_t body_start = req.find("\r\n\r\n");
-    if (body_start == std::string::npos) {
-        send_response(client, "400 Bad Request", "Missing body", "text/plain"); return;
-    }
-    body_start += 4;
-    std::string body = req.substr(body_start);
-
-    // Simple "cmd":"..." extractor — no external JSON lib needed
-    size_t ck = body.find("\"cmd\"");
-    if (ck == std::string::npos) {
-        send_response(client, "400 Bad Request", "Missing cmd", "text/plain"); return;
-    }
-    size_t q1 = body.find('"', ck + 5);
-    if (q1 == std::string::npos) { send_response(client, "400 Bad Request", "Malformed", "text/plain"); return; }
-    size_t q2 = body.find('"', q1 + 1);
-    if (q2 == std::string::npos) { send_response(client, "400 Bad Request", "Malformed", "text/plain"); return; }
-    std::string cmd = body.substr(q1 + 1, q2 - q1 - 1);
-
-    // Whitelist — only these prefixes are executable
-    static const std::vector<std::string> whitelist = {
-        "ipconfig", "tasklist", "netstat", "systeminfo", "getmac",
-        "whoami", "hostname", "ver", "netsh", "Get-", "get-", "ping",
-        "sc ", "sc\t",        // service control (sc query, sc start, etc.)
-        "arp",               // arp -a
-        "route",             // route print
-        "nslookup",          // DNS lookup
-        "tracert",           // traceroute
-        "pathping",          // path ping
-        "wmic",              // WMI queries
-        "powercfg",          // power config
-        "bcdedit",           // boot config
-        "net ",  "net\t",    // net use, net view, net user
-        "dir",               // directory listing
-        "date /t",           // system date
-        "time /t",           // system time
-        "set",               // environment variables
-        "echo",              // echo
-        "type",              // file contents
-        "where",             // find executable paths
-    };
-    bool allowed = false;
-    for (const auto& w : whitelist) {
-        if (cmd.find(w) == 0) { allowed = true; break; }
-    }
-
-    std::string output;
-    if (allowed) {
-        if (cmd.find("Get-") == 0 || cmd.find("get-") == 0) {
-            output = exec_shell("powershell -NoProfile -Command \"" + cmd + "\" 2>&1");
-        } else {
-            output = exec_shell("cmd /c " + cmd + " 2>&1");
-        }
-    } else {
-        output = "Error: Command not in whitelist.\n"
-                 "Allowed: ipconfig, tasklist, netstat, systeminfo, getmac, whoami,\n"
-                 "         hostname, ver, netsh, ping, arp, route, nslookup, tracert,\n"
-                 "         pathping, wmic, net, sc, dir, date /t, time /t, set,\n"
-                 "         Get-Process, Get-Service, Get-NetAdapter, Get-NetIPAddress, ...";
-    }
-
-    // JSON-escape the output
-    std::string escaped;
-    escaped.reserve(output.size() * 2);
-    for (char c : output) {
-        switch (c) {
-            case '"':  escaped += "\\\""; break;
-            case '\\': escaped += "\\\\"; break;
-            case '\n': escaped += "\\n";  break;
-            case '\r': escaped += "\\r";  break;
-            case '\t': escaped += "\\t";  break;
-            default:
-                if ((unsigned char)c < 32) escaped += ' ';
-                else escaped += c;
-        }
-    }
-    // Truncate at 20 KB
-    if (escaped.size() > 20000) {
-        escaped = escaped.substr(0, 20000) + "\\n... (truncated at 20KB)";
-    }
-
-    std::string json_body = "{\"output\":\"" + escaped + "\"}";
-    send_response(client, "200 OK", json_body, "application/json");
-}
-
-std::string DashboardServer::exec_shell(const std::string& cmd) {
-    FILE* pipe = _popen(cmd.c_str(), "r");
-    if (!pipe) return "Error: failed to execute command";
-    char buffer[4096];
-    std::string result;
-    while (fgets(buffer, (int)sizeof(buffer), pipe) != nullptr) {
-        result += buffer;
-    }
-    _pclose(pipe);
-    return result;
-}
-
 void DashboardServer::send_response(uintptr_t client, const std::string& status,
                                      const std::string& body,
-                                     const std::string& content_type) {
+                                     const std::string& content_type,
+                                     const std::string& extra_headers) {
     std::string resp;
     resp.reserve(512 + body.size());
     resp  = "HTTP/1.1 " + status + "\r\n";
     resp += "Content-Type: "   + content_type + "; charset=utf-8\r\n";
-    resp += "Access-Control-Allow-Origin: *\r\n";
-    resp += "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n";
-    resp += "Access-Control-Allow-Headers: Content-Type\r\n";
+    resp += extra_headers;
     resp += "Content-Length: " + std::to_string(body.size()) + "\r\n";
     resp += "Connection: close\r\n\r\n";
     resp += body;

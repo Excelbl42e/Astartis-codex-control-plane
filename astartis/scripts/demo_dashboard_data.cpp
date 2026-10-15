@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
     // Write once immediately before starting background thread
     writer.start(5);
 
-    // Start HTTP server — serves dashboard files + terminal command execution
+    // Start read-only HTTP server — serves dashboard files + dashboard_data.json
     DashboardServer server(output_dir, output_dir + "/dashboard_data.json", 9876);
     server.start();
     std::cerr << "[Demo] Open http://127.0.0.1:9876/ in your browser\n";
