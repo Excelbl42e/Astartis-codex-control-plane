@@ -8,6 +8,11 @@
 //
 // Key design points:
 //  - Every block has a TTL (default 15 min / 900 s) and self-heals on expiry.
+//  - The caller-supplied IP must parse as exactly one IPv4 or IPv6 address
+//    (inet_pton). It is canonicalized (inet_ntop) before the allowlist check
+//    and before it is placed on the netsh command line; keywords such as
+//    "any", CIDR blocks, ranges, whitespace and quotes are refused, as are
+//    unspecified, broadcast and multicast addresses.
 //  - An allowlist (loopback, ::1, 0.0.0.0, plus runtime-detected gateway and
 //    DNS IPs) is checked BEFORE calling netsh — blocked entry is refused, not
 //    silently ignored.
@@ -62,16 +67,22 @@ class FirewallBlocker {
 public:
     static constexpr int DEFAULT_TTL_SECONDS = 900; // 15 minutes
 
+    /// Runs "netsh <args>" and returns its exit code.
+    using NetshRunner = std::function<int(const std::string& args)>;
+
     /**
      * @param audit_adder      Callable (event_type, payload) -> entry_id.
      * @param default_ttl_s    TTL for blocks when caller doesn't specify one.
      * @param extra_allowlist  Additional IPs to never block (merged with the
      *                         built-in loopback set).
+     * @param netsh_runner     Replaces the real netsh invocation (tests only);
+     *                         empty = run netsh via CreateProcess.
      */
     explicit FirewallBlocker(
         std::function<std::string(const std::string&, const std::string&)> audit_adder,
         int default_ttl_s = DEFAULT_TTL_SECONDS,
-        std::vector<std::string> extra_allowlist = {}
+        std::vector<std::string> extra_allowlist = {},
+        NetshRunner netsh_runner = {}
     );
 
     // Stops the background expiry thread and removes all active rules.
@@ -83,11 +94,12 @@ public:
     /**
      * @brief Add inbound + outbound block rules for ip.
      *
-     * Returns immediately with blocked=false if ip is in the allowlist.
+     * Returns immediately with blocked=false, without calling netsh, if ip
+     * is rejected by canonicalize_ip() or is in the allowlist.
      * Returns blocked=false if ip is already blocked.
      * Writes a firewall_block audit entry on success.
      *
-     * @param ip       IPv4 address string (e.g. "240.0.0.1")
+     * @param ip       IPv4 or IPv6 address string (e.g. "240.0.0.1")
      * @param ttl_s    Seconds until auto-expiry (0 = use default_ttl_s)
      */
     BlockResult block(const std::string& ip, int ttl_s = 0);
@@ -96,7 +108,7 @@ public:
      * @brief Remove block rules for ip immediately (before TTL).
      *
      * Writes a firewall_unblock audit entry.
-     * Returns false if ip was not blocked.
+     * Returns false if ip is not a valid address or was not blocked.
      */
     bool unblock(const std::string& ip);
 
@@ -115,6 +127,20 @@ public:
      */
     static bool ping_elevation_check();
 
+    /**
+     * @brief Validate ip as a single blockable address and canonicalize it.
+     *
+     * Accepts only a string that inet_pton parses as one IPv4 or IPv6
+     * address. On success writes the inet_ntop form to canonical (lowercase,
+     * compressed IPv6; IPv4-mapped IPv6 is unmapped to plain IPv4) and returns
+     * true. Returns false with a reason for anything else — empty strings,
+     * hostnames, "any", CIDR, ranges, whitespace, quotes — and for
+     * unspecified (0.0.0.0, ::), broadcast and multicast addresses.
+     */
+    static bool canonicalize_ip(const std::string& ip,
+                                std::string& canonical,
+                                std::string& reason);
+
 private:
     // Build a unique rule name stem for this IP at this moment
     static std::string make_rule_stem(const std::string& ip);
@@ -124,12 +150,13 @@ private:
     static int run_netsh(const std::string& args);
 
     // Add one netsh advfirewall rule; return true on exit-code 0.
-    static bool add_rule(const std::string& name,
-                         const std::string& ip,
-                         const std::string& dir);   // "in" or "out"
+    // ip must already be canonical (see canonicalize_ip).
+    bool add_rule(const std::string& name,
+                  const std::string& ip,
+                  const std::string& dir);   // "in" or "out"
 
     // Delete one netsh advfirewall rule by name; return true on exit-code 0.
-    static bool delete_rule(const std::string& name);
+    bool delete_rule(const std::string& name);
 
     // Background thread: wake every 30 s, expire old blocks.
     void expiry_loop();
@@ -142,6 +169,7 @@ private:
 
     std::function<std::string(const std::string&, const std::string&)> audit_adder_;
     int default_ttl_s_;
+    NetshRunner netsh_;
 
     mutable std::mutex               mutex_;
     std::map<std::string, ActiveBlock> blocks_; // key = IP

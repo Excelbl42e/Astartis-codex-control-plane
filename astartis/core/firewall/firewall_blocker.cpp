@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cstring>
+#include <cctype>
 
 namespace astartis {
 namespace firewall {
@@ -29,6 +30,85 @@ static int64_t now_ms()
     using namespace std::chrono;
     return duration_cast<milliseconds>(
                system_clock::now().time_since_epoch()).count();
+}
+
+// Parse text as exactly one IPv4 or IPv6 address literal. On success fill
+// addr (first 4 bytes for IPv4, all 16 for IPv6), set is_v4 and write the
+// canonical inet_ntop form. IPv4-mapped IPv6 (::ffff:a.b.c.d) is unmapped to
+// plain IPv4 so it compares equal to IPv4 allowlist entries.
+static bool parse_ip_literal(const std::string& text,
+                             std::string& canonical,
+                             unsigned char (&addr)[16],
+                             bool& is_v4)
+{
+    // INET6_ADDRSTRLEN covers the longest address text plus its NUL.
+    if (text.empty() || text.size() >= INET6_ADDRSTRLEN) return false;
+
+    // Address literals use only hex digits, '.' and ':'. Rejecting everything
+    // else up front keeps whitespace, quotes, '/', '-', '%' and keywords such
+    // as "any" away from inet_pton, whose leniency varies by platform.
+    for (unsigned char c : text) {
+        if (!std::isxdigit(c) && c != '.' && c != ':') return false;
+    }
+
+    std::memset(addr, 0, sizeof(addr));
+    int family = AF_INET;
+    if (inet_pton(AF_INET, text.c_str(), addr) != 1) {
+        if (inet_pton(AF_INET6, text.c_str(), addr) != 1) return false;
+        static const unsigned char v4_mapped_prefix[12] =
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
+        if (std::memcmp(addr, v4_mapped_prefix, sizeof(v4_mapped_prefix)) == 0) {
+            std::memmove(addr, addr + 12, 4);
+            std::memset(addr + 4, 0, 12);
+        } else {
+            family = AF_INET6;
+        }
+    }
+    is_v4 = (family == AF_INET);
+
+    char buf[INET6_ADDRSTRLEN] = {};
+    if (!inet_ntop(family, addr, buf, sizeof(buf))) return false;
+    canonical = buf;
+    return true;
+}
+
+bool FirewallBlocker::canonicalize_ip(const std::string& ip,
+                                      std::string& canonical,
+                                      std::string& reason)
+{
+    canonical.clear();
+    unsigned char addr[16];
+    bool is_v4 = false;
+    std::string parsed;
+    if (!parse_ip_literal(ip, parsed, addr, is_v4)) {
+        // ip is deliberately not echoed: it is untrusted and the reason ends
+        // up in bridge events and audit payloads.
+        reason = "invalid ip: expected a single IPv4 or IPv6 address "
+                 "(no hostnames, keywords, CIDR, ranges or whitespace)";
+        return false;
+    }
+
+    const unsigned char* first = addr;
+    const unsigned char* last  = addr + (is_v4 ? 4 : 16);
+    const bool unspecified =
+        std::all_of(first, last, [](unsigned char b) { return b == 0; });
+    const bool broadcast =
+        is_v4 && std::all_of(first, last, [](unsigned char b) { return b == 0xff; });
+    const bool multicast =
+        is_v4 ? (addr[0] & 0xf0) == 0xe0   // 224.0.0.0/4
+              : addr[0] == 0xff;           // ff00::/8
+    const char* kind = unspecified ? "unspecified"
+                     : broadcast   ? "broadcast"
+                     : multicast   ? "multicast"
+                     :               nullptr;
+    if (kind) {
+        reason = "ip " + parsed + " is " + (unspecified ? "an " : "a ") + kind +
+                 " address — not blocked";
+        return false;
+    }
+
+    canonical = parsed;
+    return true;
 }
 
 // Run "netsh <args>" via CreateProcess; return exit code.
@@ -76,6 +156,11 @@ bool FirewallBlocker::add_rule(const std::string& name,
                                 const std::string& ip,
                                 const std::string& dir)
 {
+    // Defence in depth: only an already-canonical single address may become
+    // a netsh argument, whatever the caller passed.
+    std::string canonical, reason;
+    if (!canonicalize_ip(ip, canonical, reason) || canonical != ip) return false;
+
     // netsh advfirewall firewall add rule
     //   name="..." protocol=any dir=in|out action=block remoteip=<ip>
     std::string args =
@@ -85,7 +170,7 @@ bool FirewallBlocker::add_rule(const std::string& name,
         " dir="    + dir  +
         " action=block"
         " remoteip=" + ip;
-    return run_netsh(args) == 0;
+    return netsh_(args) == 0;
 }
 
 bool FirewallBlocker::delete_rule(const std::string& name)
@@ -93,7 +178,7 @@ bool FirewallBlocker::delete_rule(const std::string& name)
     std::string args =
         "advfirewall firewall delete rule"
         " name=\"" + name + "\"";
-    return run_netsh(args) == 0;
+    return netsh_(args) == 0;
 }
 
 bool FirewallBlocker::ping_elevation_check()
@@ -156,6 +241,15 @@ void FirewallBlocker::build_allowlist(const std::vector<std::string>& extra)
     for (const auto& ip : extra)
         allowlist_.push_back(ip);
 
+    // Canonicalize so entries compare equal to canonicalized block targets
+    // (e.g. an extra "2001:DB8::1" must match a request for "2001:db8::1").
+    for (auto& entry : allowlist_) {
+        std::string canonical;
+        unsigned char addr[16];
+        bool is_v4 = false;
+        if (parse_ip_literal(entry, canonical, addr, is_v4)) entry = canonical;
+    }
+
     // Deduplicate
     std::sort(allowlist_.begin(), allowlist_.end());
     allowlist_.erase(std::unique(allowlist_.begin(), allowlist_.end()),
@@ -169,10 +263,13 @@ void FirewallBlocker::build_allowlist(const std::vector<std::string>& extra)
 FirewallBlocker::FirewallBlocker(
     std::function<std::string(const std::string&, const std::string&)> audit_adder,
     int default_ttl_s,
-    std::vector<std::string> extra_allowlist
+    std::vector<std::string> extra_allowlist,
+    NetshRunner netsh_runner
 )
     : audit_adder_(std::move(audit_adder))
     , default_ttl_s_(default_ttl_s > 0 ? default_ttl_s : DEFAULT_TTL_SECONDS)
+    , netsh_(netsh_runner ? std::move(netsh_runner)
+                          : NetshRunner(&FirewallBlocker::run_netsh))
 {
     build_allowlist(extra_allowlist);
     expiry_thread_ = std::thread(&FirewallBlocker::expiry_loop, this);
@@ -196,9 +293,14 @@ FirewallBlocker::~FirewallBlocker()
 // block
 // ---------------------------------------------------------------------------
 
-BlockResult FirewallBlocker::block(const std::string& ip, int ttl_s)
+BlockResult FirewallBlocker::block(const std::string& raw_ip, int ttl_s)
 {
-    // 1. Allowlist check — BEFORE any netsh call
+    // 1. Parse + canonicalize — only a single address goes any further
+    std::string ip, reason;
+    if (!canonicalize_ip(raw_ip, ip, reason))
+        return BlockResult{false, reason, "", ""};
+
+    // 2. Allowlist check (canonical form) — BEFORE any netsh call
     {
         auto it = std::find(allowlist_.begin(), allowlist_.end(), ip);
         if (it != allowlist_.end()) {
@@ -210,17 +312,17 @@ BlockResult FirewallBlocker::block(const std::string& ip, int ttl_s)
 
     std::lock_guard<std::mutex> lk(mutex_);
 
-    // 2. Already blocked?
+    // 3. Already blocked?
     if (blocks_.count(ip)) {
         return BlockResult{false, "ip " + ip + " is already blocked", "", ""};
     }
 
-    // 3. Build rule names
+    // 4. Build rule names
     std::string stem    = make_rule_stem(ip);
     std::string name_in  = stem + "-in";
     std::string name_out = stem + "-out";
 
-    // 4. Add the two netsh rules
+    // 5. Add the two netsh rules
     bool ok_in  = add_rule(name_in,  ip, "in");
     bool ok_out = add_rule(name_out, ip, "out");
 
@@ -230,7 +332,7 @@ BlockResult FirewallBlocker::block(const std::string& ip, int ttl_s)
             "", ""};
     }
 
-    // 5. Record the block
+    // 6. Record the block
     int effective_ttl = (ttl_s > 0) ? ttl_s : default_ttl_s_;
     int64_t now = now_ms();
     ActiveBlock ab{
@@ -240,7 +342,7 @@ BlockResult FirewallBlocker::block(const std::string& ip, int ttl_s)
         ""
     };
 
-    // 6. Audit entry
+    // 7. Audit entry
     std::ostringstream pl;
     pl << "ip=" << ip
        << " rule_in="  << name_in
@@ -258,8 +360,11 @@ BlockResult FirewallBlocker::block(const std::string& ip, int ttl_s)
 // unblock (public)
 // ---------------------------------------------------------------------------
 
-bool FirewallBlocker::unblock(const std::string& ip)
+bool FirewallBlocker::unblock(const std::string& raw_ip)
 {
+    std::string ip, reason;
+    if (!canonicalize_ip(raw_ip, ip, reason)) return false;
+
     std::lock_guard<std::mutex> lk(mutex_);
     auto it = blocks_.find(ip);
     if (it == blocks_.end()) return false;
@@ -293,8 +398,11 @@ void FirewallBlocker::do_unblock_locked(
 // is_blocked / active_blocks
 // ---------------------------------------------------------------------------
 
-bool FirewallBlocker::is_blocked(const std::string& ip) const
+bool FirewallBlocker::is_blocked(const std::string& raw_ip) const
 {
+    std::string ip, reason;
+    if (!canonicalize_ip(raw_ip, ip, reason)) return false;
+
     std::lock_guard<std::mutex> lk(mutex_);
     return blocks_.count(ip) > 0;
 }

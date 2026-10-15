@@ -1,6 +1,12 @@
 // Step 16 ST-4 -- FirewallBlocker test
 //
 // Tests:
+//  V. Input validation (no elevation needed — netsh is replaced by a recorder):
+//       - "any", CIDR, ranges, embedded spaces/quotes, "" etc. are rejected
+//         with zero netsh calls and no audit entry
+//       - unspecified / broadcast / multicast addresses are rejected
+//       - canonicalization defeats allowlist bypasses ("::ffff:127.0.0.1")
+//       - 240.0.0.1 still produces exactly the expected netsh arguments
 //  A. Allowlist check: 127.0.0.1 is never blocked (no netsh call needed)
 //  B. Real block on 240.0.0.1 (IANA reserved / TEST-NET-4, unroutable):
 //       - block() returns blocked=true
@@ -12,6 +18,7 @@
 //  C. is_blocked() reflects state correctly during and after the TTL
 //
 // Exit code 2 = not elevated (skip, not fail — same pattern as ClamdScannerTest).
+// Test V runs before the elevation check, so it is exercised either way.
 
 #ifdef NDEBUG
 #undef NDEBUG
@@ -22,6 +29,8 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <vector>
 
 // Windows elevation check
 #include <winsock2.h>
@@ -47,6 +56,176 @@ static bool rule_exists_in_netsh(const std::string& name)
     return std::system(cmd.c_str()) == 0;
 }
 
+// Stands in for netsh: records each argument string and reports success.
+// The blocker's expiry thread may call it too, hence the mutex.
+struct NetshRecorder {
+    std::mutex               mu;
+    std::vector<std::string> calls;
+
+    FirewallBlocker::NetshRunner runner()
+    {
+        return [this](const std::string& args) {
+            std::lock_guard<std::mutex> lk(mu);
+            calls.push_back(args);
+            return 0;
+        };
+    }
+
+    std::vector<std::string> snapshot()
+    {
+        std::lock_guard<std::mutex> lk(mu);
+        return calls;
+    }
+};
+
+static bool ends_with(const std::string& s, const std::string& suffix)
+{
+    return s.size() >= suffix.size() &&
+           s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+static size_t count_events(const AuditChain& chain, const std::string& type)
+{
+    size_t n = 0;
+    for (const auto& e : chain.get_all_entries())
+        if (e.event_type == type) ++n;
+    return n;
+}
+
+// Test V: every caller-supplied string must parse as one IP address before
+// anything reaches netsh. Uses its own AuditChain so the netsh-backed tests
+// below only see their own entries.
+static void run_validation_tests()
+{
+    AuditChain vchain;
+    auto audit_adder = [&](const std::string& et, const std::string& pl) {
+        return vchain.add_entry(et, pl);
+    };
+    NetshRecorder rec;
+    FirewallBlocker fw(audit_adder, 60, {"2001:DB8::53"}, rec.runner());
+
+    // V-1: not a single address — rejected as invalid, no netsh call
+    const std::vector<std::string> invalid = {
+        "any",                      // remoteip=any blocks everything
+        "0.0.0.0/0",                // CIDR for everything
+        "1.2.3.4 dir=out",          // extra netsh parameter
+        "1.2.3.4\"",                // breaks out of the quoted rule name
+        "127.0.0.1 ",               // trailing space dodged the allowlist
+        "",
+        " 240.0.0.1",
+        "240.0.0.0/24",
+        "240.0.0.1-240.0.0.9",
+        "240.0.0.1,240.0.0.2",
+        "localsubnet",
+        "example.com",
+        "fe80::1%12",
+        "256.0.0.1",
+        "1.2.3",
+        std::string("240.0.0.1\0x", 11),
+    };
+    for (const auto& ip : invalid) {
+        BlockResult r = fw.block(ip, 60);
+        assert(!r.blocked && "invalid ip must not be blocked");
+        assert(r.reason.find("invalid ip") != std::string::npos
+               && "reason must say the ip is invalid");
+        assert(r.rule_name_in.empty() && r.rule_name_out.empty());
+        assert(!fw.unblock(ip) && "invalid ip must not unblock");
+        assert(!fw.is_blocked(ip));
+
+        std::string canonical, reason;
+        assert(!FirewallBlocker::canonicalize_ip(ip, canonical, reason));
+        assert(canonical.empty());
+    }
+    assert(rec.snapshot().empty() && "invalid ips must never reach netsh");
+    std::cout << "[PASS] Test V-1: " << invalid.size()
+              << " malformed inputs rejected, 0 netsh calls\n";
+
+    // V-2: valid syntax but never a block target
+    const std::vector<std::pair<std::string, std::string>> special = {
+        {"0.0.0.0",          "unspecified"},
+        {"::",               "unspecified"},
+        {"::ffff:0.0.0.0",   "unspecified"},
+        {"255.255.255.255",  "broadcast"},
+        {"224.0.0.1",        "multicast"},
+        {"239.255.255.250",  "multicast"},
+        {"ff02::1",          "multicast"},
+    };
+    for (const auto& kv : special) {
+        BlockResult r = fw.block(kv.first, 60);
+        assert(!r.blocked && "special address must not be blocked");
+        assert(r.reason.find(kv.second) != std::string::npos
+               && "reason must name the address class");
+    }
+    assert(rec.snapshot().empty() && "special addresses must never reach netsh");
+    std::cout << "[PASS] Test V-2: unspecified/broadcast/multicast rejected, "
+                 "0 netsh calls\n";
+
+    // V-3: allowlist is compared on the canonical form
+    const std::vector<std::string> allowlisted = {
+        "127.0.0.1", "::1", "0:0:0:0:0:0:0:1", "::ffff:127.0.0.1",
+        "2001:db8::53", "2001:0DB8:0:0:0:0:0:53",
+    };
+    for (const auto& ip : allowlisted) {
+        BlockResult r = fw.block(ip, 60);
+        assert(!r.blocked && "allowlisted ip must not be blocked");
+        assert(r.reason.find("allowlist") != std::string::npos
+               && "reason must mention allowlist");
+    }
+    assert(rec.snapshot().empty() && "allowlisted ips must never reach netsh");
+    assert(count_events(vchain, "firewall_block") == 0
+           && "no rejected input may write a firewall_block audit entry");
+    std::cout << "[PASS] Test V-3: allowlist holds for alternate spellings\n";
+
+    // V-4: a normal address still blocks, with exactly the expected args
+    {
+        BlockResult r = fw.block("240.0.0.1", 60);
+        assert(r.blocked && "240.0.0.1 must still be blockable");
+        auto calls = rec.snapshot();
+        assert(calls.size() == 2 && "one netsh call per direction");
+        assert(calls[0] == "advfirewall firewall add rule name=\"" +
+                           r.rule_name_in + "\" protocol=any dir=in"
+                           " action=block remoteip=240.0.0.1");
+        assert(calls[1] == "advfirewall firewall add rule name=\"" +
+                           r.rule_name_out + "\" protocol=any dir=out"
+                           " action=block remoteip=240.0.0.1");
+        assert(r.rule_name_in.rfind("Astartis-Block-240-0-0-1-", 0) == 0);
+        assert(fw.is_blocked("240.0.0.1"));
+
+        assert(fw.unblock("240.0.0.1"));
+        calls = rec.snapshot();
+        assert(calls.size() == 4);
+        assert(calls[2] == "advfirewall firewall delete rule name=\"" +
+                           r.rule_name_in + "\"");
+        assert(calls[3] == "advfirewall firewall delete rule name=\"" +
+                           r.rule_name_out + "\"");
+        assert(!fw.is_blocked("240.0.0.1"));
+    }
+    std::cout << "[PASS] Test V-4: 240.0.0.1 blocks with canonical netsh args\n";
+
+    // V-5: non-canonical spellings reach netsh only in canonical form
+    {
+        const size_t before = rec.snapshot().size();
+        BlockResult r6 = fw.block("2001:0DB8:0:0::1", 60);
+        BlockResult r4 = fw.block("::FFFF:240.0.0.2", 60);
+        assert(r6.blocked && r4.blocked);
+        auto calls = rec.snapshot();
+        assert(calls.size() == before + 4);
+        assert(ends_with(calls[before + 0], " remoteip=2001:db8::1"));
+        assert(ends_with(calls[before + 1], " remoteip=2001:db8::1"));
+        assert(ends_with(calls[before + 2], " remoteip=240.0.0.2"));
+        assert(ends_with(calls[before + 3], " remoteip=240.0.0.2"));
+        assert(fw.is_blocked("2001:db8::1") && fw.is_blocked("240.0.0.2"));
+
+        // Already blocked under another spelling
+        assert(!fw.block("2001:db8::0:1", 60).blocked);
+        assert(rec.snapshot().size() == before + 4);
+
+        assert(fw.unblock("2001:DB8::1") && fw.unblock("240.0.0.2"));
+        assert(fw.active_blocks().empty());
+    }
+    std::cout << "[PASS] Test V-5: IPv6 / IPv4-mapped input canonicalized\n";
+}
+
 static bool is_elevated_process()
 {
     HANDLE token = nullptr;
@@ -69,6 +248,8 @@ int main()
               << "ASTARTIS FIREWALL BLOCKER TEST          \n"
               << "Step 16 ST-4                            \n"
               << "========================================\n";
+
+    run_validation_tests();
 
     // Skip gracefully if not elevated
     if (!is_elevated_process()) {
